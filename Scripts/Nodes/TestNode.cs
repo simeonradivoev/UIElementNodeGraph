@@ -12,14 +12,17 @@ namespace NodeEditor.Nodes
 			int index = 0;
 			AddSlot(new ValueSlot<float>(index++, "Output",SlotType.Output));
 			AddSlot(new ValueSlot<float>(index++, "Input" + index, SlotType.Input));
+			AddSlot(new ValueSlot<double>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<bool>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<int>(index++, "Input" + index, SlotType.Input));
+			AddSlot(new ValueSlot<string>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<Rect>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<Color>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<Bounds>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<Vector2>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<Vector3>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<Vector4>(index++, "Input" + index, SlotType.Input));
+			AddSlot(new ValueSlot<Matrix4x4>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<Quaternion>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<Texture2D>(index++, "Input" + index, SlotType.Input));
 			AddSlot(new ValueSlot<Cubemap>(index++, "Input" + index, SlotType.Input));

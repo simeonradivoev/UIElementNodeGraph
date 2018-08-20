@@ -1,7 +1,7 @@
 using UnityEditor.Experimental.UIElements.GraphView;
 using UnityEngine;
 
-namespace NodeEditor.Editor.Scripts
+namespace NodeEditor.Scripts
 {
     class EdgeConnectorListener : IEdgeConnectorListener
     {

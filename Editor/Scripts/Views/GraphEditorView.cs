@@ -9,7 +9,7 @@ using UnityEngine.Experimental.UIElements;
 using GEdge = UnityEditor.Experimental.UIElements.GraphView.Edge;
 using Object = UnityEngine.Object;
 
-namespace NodeEditor.Editor.Scripts.Views
+namespace NodeEditor.Scripts.Views
 {
 	[Serializable]
 	class FloatingWindowsLayout
@@ -270,15 +270,15 @@ namespace NodeEditor.Editor.Scripts.Views
 				{
 					if (edge.input != null)
 					{
-						var materialNodeView = edge.input.node as NodeView;
-						if (materialNodeView != null)
-							nodesToUpdate.Add(materialNodeView);
+						var nodeView = edge.input.node as NodeView;
+						if (nodeView != null && m_Graph.ContainsNodeGuid(nodeView.node.guid))
+							nodesToUpdate.Add(nodeView);
 					}
 					if (edge.output != null)
 					{
-						var materialNodeView = edge.output.node as NodeView;
-						if (materialNodeView != null)
-							nodesToUpdate.Add(materialNodeView);
+						var nodeView = edge.output.node as NodeView;
+						if (nodeView != null && m_Graph.ContainsNodeGuid(nodeView.node.guid))
+							nodesToUpdate.Add(nodeView);
 					}
 				}
 			}

@@ -2,16 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using NodeEditor.Editor.Controls;
+using NodeEditor.Util;
 using UnityEditor.Experimental.UIElements.GraphView;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using UnityEngine.Experimental.UIElements.StyleEnums;
 using UnityEngine.Experimental.UIElements.StyleSheets;
 
-namespace NodeEditor.Editor.Scripts.Views
+namespace NodeEditor.Scripts.Views
 {
 	public class NodeView : Node
 	{
+		private static Dictionary<Type,Type> ControlElementTypes;
 		VisualElement m_ControlItems;
 		VisualElement m_ControlsDivider;
 		IEdgeConnectorListener m_ConnectorListener;
@@ -47,10 +50,31 @@ namespace NodeEditor.Editor.Scripts.Views
 				m_ControlItems = new VisualElement { name = "items" };
 				controlsContainer.Add(m_ControlItems);
 
+				if (ControlElementTypes == null)
+				{
+					ControlElementTypes = new Dictionary<Type, Type>();
+					foreach (var type in AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypesOrNothing()).Where(t => typeof(VisualElement).IsAssignableFrom(t)))
+					{
+						var controlElementAttributes = type.GetCustomAttributes(typeof(ControlElementAttribute), true);
+						if (controlElementAttributes.Length > 0)
+						{
+							var at = (ControlElementAttribute)controlElementAttributes[0];
+							ControlElementTypes.Add(at.ControlType, type);
+						}
+					}
+				}
+
 				// Instantiate control views from node
 				foreach (var propertyInfo in node.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-					foreach (IControlAttribute attribute in propertyInfo.GetCustomAttributes(typeof(IControlAttribute), false))
-						m_ControlItems.Add(attribute.InstantiateControl(node, propertyInfo));
+				foreach (IControlAttribute attribute in propertyInfo.GetCustomAttributes(typeof(IControlAttribute), false))
+				{
+					var attributeType = attribute.GetType();
+					Type elementType;
+					if (ControlElementTypes.TryGetValue(attributeType, out elementType))
+					{
+						m_ControlItems.Add((VisualElement)Activator.CreateInstance(elementType, attribute, node,propertyInfo));
+					}
+				}
 			}
 			if (m_ControlItems.childCount > 0)
 				contents.Add(controlsContainer);

@@ -4,7 +4,7 @@ using UnityEditor.Callbacks;
 using UnityEditor.Experimental.AssetImporters;
 using UnityEngine;
 
-namespace NodeEditor.Editor.Scripts
+namespace NodeEditor.Scripts
 {
 	[CustomEditor(typeof(NodeGraphImporter))]
 	public class NodeGraphImporterEditor : ScriptedImporterEditor

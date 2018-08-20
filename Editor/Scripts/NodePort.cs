@@ -2,7 +2,7 @@
 using UnityEditor.Experimental.UIElements.GraphView;
 using UnityEngine.Experimental.UIElements;
 
-namespace NodeEditor.Editor.Scripts
+namespace NodeEditor.Scripts
 {
 	public class NodePort : Port
 	{

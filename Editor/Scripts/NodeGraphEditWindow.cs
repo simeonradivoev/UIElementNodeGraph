@@ -2,13 +2,13 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using NodeEditor.Editor.Scripts.Views;
+using NodeEditor.Scripts.Views;
 using UnityEditor;
 using UnityEditor.Experimental.UIElements;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 
-namespace NodeEditor.Editor.Scripts
+namespace NodeEditor.Scripts
 {
 	public class NodeGraphEditWindow : EditorWindow
 	{

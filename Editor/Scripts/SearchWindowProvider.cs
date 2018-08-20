@@ -9,10 +9,25 @@ using UnityEditor.Experimental.UIElements.GraphView;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 
-namespace NodeEditor.Editor.Scripts
+namespace NodeEditor.Scripts
 {
     class SearchWindowProvider : ScriptableObject, ISearchWindowProvider
     {
+	    private static Type[] ValueTypes = 
+	    {
+		    typeof(bool),
+		    typeof(float),
+		    typeof(double),
+		    typeof(string),
+		    typeof(Vector2),
+		    typeof(Vector3),
+		    typeof(Vector4),
+		    typeof(Color),
+		    typeof(Rect),
+		    typeof(Bounds),
+		    typeof(Quaternion)
+		};
+
         EditorWindow m_EditorWindow;
         AbstractNodeGraph m_Graph;
         GraphView m_GraphView;
@@ -83,6 +98,15 @@ namespace NodeEditor.Editor.Scripts
 		        node.owner = null;
 		        AddEntries(node, new[] { "Properties", "Property: " + property.displayName }, nodeEntries);
 	        }
+
+	        var genericValueType = typeof(ValueNode<>);
+	        foreach (var valueType in ValueTypes)
+	        {
+		        var valueNodeType = genericValueType.MakeGenericType(valueType);
+		        var valueNode = (AbstractNode)Activator.CreateInstance(valueNodeType);
+		        valueNode.owner = m_Graph;
+		        AddEntries(valueNode, new[] { "Values", "Value: " + valueType.Name }, nodeEntries);
+			}
 
 			// Sort the entries lexicographically by group then title with the requirement that items always comes before sub-groups in the same group.
 			// Example result:

@@ -4,7 +4,7 @@ using UnityEditor.Experimental.UIElements;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 
-namespace NodeEditor.Editor.Scripts.Views
+namespace NodeEditor.Scripts.Views
 {
     public class MultiFloatSlotControlView : VisualElement
     {

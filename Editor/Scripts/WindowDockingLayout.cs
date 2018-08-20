@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using UnityEngine.Experimental.UIElements.StyleSheets;
 
-namespace NodeEditor.Editor.Scripts
+namespace NodeEditor.Scripts
 {
     [Serializable]
     public class WindowDockingLayout

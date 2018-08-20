@@ -4,7 +4,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace NodeEditor.Editor.Scripts
+namespace NodeEditor.Scripts
 {
 	public class NoderGraphAssetPostProcessor : AssetPostprocessor
 	{

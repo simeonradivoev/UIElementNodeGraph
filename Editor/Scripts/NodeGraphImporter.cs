@@ -1,6 +1,6 @@
 ﻿using UnityEditor.Experimental.AssetImporters;
 
-namespace NodeEditor.Editor.Scripts
+namespace NodeEditor.Scripts
 {
 	[ScriptedImporter(1, ShaderGraphExtension)]
 	public class NodeGraphImporter : ScriptedImporter

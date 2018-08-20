@@ -7,7 +7,7 @@ using Toggle = UnityEngine.Experimental.UIElements.Toggle;
 using ContextualMenu = UnityEngine.Experimental.UIElements.DropdownMenu;
 #endif
 
-namespace NodeEditor.Editor.Scripts
+namespace NodeEditor.Scripts
 {
     class BlackboardFieldPropertyView : VisualElement
     {

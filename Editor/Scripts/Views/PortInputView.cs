@@ -1,11 +1,11 @@
 using System;
-using NodeEditor.Editor.Scripts.Views.Slots;
+using NodeEditor.Scripts.Views.Slots;
 using UnityEditor.Experimental.UIElements.GraphView;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using UnityEngine.Experimental.UIElements.StyleSheets;
 
-namespace NodeEditor.Editor.Scripts.Views
+namespace NodeEditor.Scripts.Views
 {
     public class PortInputView : GraphElement, IDisposable
     {
@@ -17,9 +17,7 @@ namespace NodeEditor.Editor.Scripts.Views
         {
 	        get
 	        {
-		        var bytes = m_Slot.valueType.Type.GUID.ToByteArray();
-				Color32 c = new Color32(bytes[0], bytes[1], bytes[2], bytes[3]);
-		        return c;
+		        return slot.valueType.Type.GetColor();
 	        }
         }
 

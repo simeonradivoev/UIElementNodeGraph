@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using UnityEngine.Experimental.UIElements.StyleEnums;
 
-namespace NodeEditor.Editor.Scripts
+namespace NodeEditor.Scripts
 {
 	public class BlackboardProvider
 	{
@@ -181,9 +181,11 @@ namespace NodeEditor.Editor.Scripts
 			gm.AddItem(new GUIContent("Boolean"),false,()=> AddProperty(new ValueProperty<bool>(),true));
 			gm.AddItem(new GUIContent("Float"),false,()=> AddProperty(new ValueProperty<float>(),true));
 			gm.AddItem(new GUIContent("Int"),false,()=> AddProperty(new ValueProperty<int>(),true));
+			gm.AddItem(new GUIContent("String"),false,()=> AddProperty(new ValueProperty<string>(),true));
 			gm.AddItem(new GUIContent("Vector4"),false,()=> AddProperty(new ValueProperty<Vector4>(),true));
 			gm.AddItem(new GUIContent("Vector3"),false,()=> AddProperty(new ValueProperty<Vector3>(),true));
 			gm.AddItem(new GUIContent("Vector2"),false,()=> AddProperty(new ValueProperty<Vector2>(),true));
+			gm.AddItem(new GUIContent("Matrix4x4"),false,()=> AddProperty(new ValueProperty<Matrix4x4>(),true));
 			gm.AddItem(new GUIContent("Quaternion"),false,()=> AddProperty(new ValueProperty<Quaternion>(),true));
 			gm.AddItem(new GUIContent("Color"),false,()=> AddProperty(new ValueProperty<Color>(),true));
 			gm.AddItem(new GUIContent("Bounds"),false,()=> AddProperty(new ValueProperty<Bounds>(),true));

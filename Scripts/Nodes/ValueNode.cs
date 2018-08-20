@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace NodeEditor.Nodes
 {
-	public class ValueNode<T> : AbstractNode, IPropertyFromNode
+	public class ValueNode<T> : AbstractNode, IPropertyFromNode, IHasValue<T>,IValueSetter<T>
 	{
 		public const int OutputSlotId = 0;
 		private const string kOutputSlotName = "Out";
@@ -17,6 +17,7 @@ namespace NodeEditor.Nodes
 		[SerializeField]
 		T m_Value;
 
+		[Control]
 		public T value
 		{
 			get { return m_Value; }
@@ -25,6 +26,11 @@ namespace NodeEditor.Nodes
 				m_Value = value;
 				Dirty(ModificationScope.Node);
 			}
+		}
+
+		public void SetValue(T val)
+		{
+			m_Value = val;
 		}
 
 		public sealed override void UpdateNodeAfterDeserialization()

@@ -77,113 +77,80 @@ NodePort.output > #type {
 /* NodePorts colors by types */
 /*******************************/
 
-NodePort.typeTexture {
+NodePort.Texture {
     port-color:#FF8B8B;
 }
 
-NodePort.typeTexture2D {
+NodePort.Texture2D {
     /* Same as typeTexture */
     port-color:#FF8B8B;
 }
 
-NodePort.typeTexture2DArray {
+NodePort.Texture3D {
     /* Same as typeTexture */
     port-color:#FF8B8B;
 }
 
-NodePort.typeTexture3D {
+NodePort.Cubemap {
     /* Same as typeTexture */
     port-color:#FF8B8B;
 }
 
-NodePort.typeCubemap {
-    /* Same as typeTexture */
-    port-color:#FF8B8B;
-}
-
-NodePort.typeGraphScript {
-    /* Todo: there is no such type in Unity atm */
+NodePort.Rect {
     port-color:#E681BA;
 }
 
-NodePort.typeFloat4 {
+NodePort.Vector4 {
     port-color:#FBCBF4;
 }
 
-NodePort.typeVector4 {
-    /* Same as typeFloat4 */
+NodePort.Quaternion {
     port-color:#FBCBF4;
 }
 
-NodePort.typeQuaternion {
-    /* Same as typeFloat4 */
+NodePort.Color {
     port-color:#FBCBF4;
 }
 
-NodePort.typeColor {
-    /* Same as typeFloat4 */
-    port-color:#FBCBF4;
-}
-
-NodePort.typeInt {
+NodePort.Int {
     port-color:#9481E6;
 }
 
-NodePort.typeInt32 {
+NodePort.Int32 {
     /* Same as typeInt */
     port-color:#9481E6;
 }
 
 /* TEMP STUFF THAT SHOULD ACTUALLY STAY IN GRAPHVIEW */
-NodePort.typeInt64 {
+NodePort.Int64 {
     /* Same as typeInt */
     /* todo we might want to differentiate that from int32 */
     port-color:#9481E6;
 }
 
-NodePort.typeBoolean {
+NodePort.Boolean {
     port-color:#9481E6;
 }
 
-NodePort.typeMatrix {
+NodePort.Matrix4x4 {
     port-color:#8FC1DF;
 }
 
-NodePort.typeMatrix4x4 {
-    /* Same as typeMatrix */
+NodePort.GameObject {
     port-color:#8FC1DF;
 }
 
-NodePort.typeGameObject {
-    port-color:#8FC1DF;
-}
-
-NodePort.typeFloat {
+NodePort.Single {
     port-color:#84E4E7;
 }
 
-NodePort.typeFloat1 {
-    /* Same as typeFloat */
-    port-color:#84E4E7;
-}
-
-NodePort.typeSingle {
-    /* Same as typeFloat */
-    port-color:#84E4E7;
-}
-
-NodePort.typeDouble {
-    /* Same as typeFloat */
+NodePort.Double {
+    /* Same as Single */
     /* todo we might want to differentiate that from float */
     port-color:#84E4E7;
 }
 
-NodePort.typeFloat2 {
-    port-color:#9AEF92;
-}
-
-NodePort.typeVector2 {
-    /* Same as typeFloat2 */
+NodePort.Vector2 {
     port-color:#9AEF92;
 }
 
@@ -191,15 +158,10 @@ NodePort.typeComponent {
     port-color:#C9F774;
 }
 
-NodePort.typeFloat3 {
+NodePort.Vector3 {
     port-color:#F6FF9A;
 }
 
-NodePort.typeVector3 {
-    /* Same as typeFloat3 */
-    port-color:#F6FF9A;
-}
-
-NodePort.typeString {
+NodePort.String {
     port-color:#FCD76E;
 }

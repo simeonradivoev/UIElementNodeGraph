@@ -1,4 +1,4 @@
-﻿namespace NodeEditor.Editor.Scripts
+﻿namespace NodeEditor.Scripts
 {
 	public interface INodeModificationListener
 	{

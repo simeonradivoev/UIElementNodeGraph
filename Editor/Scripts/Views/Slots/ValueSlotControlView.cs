@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using Object = UnityEngine.Object;
 
-namespace NodeEditor.Editor.Scripts.Views.Slots
+namespace NodeEditor.Scripts.Views.Slots
 {
 	public class ValueSlotControlView : VisualElement
 	{
@@ -33,6 +33,7 @@ namespace NodeEditor.Editor.Scripts.Views.Slots
 
 			}
 			else if (slot is ValueSlot<double>) AddControl(new DoubleField(), slot);
+			else if (slot is ValueSlot<string>) AddControl(new TextField(), slot);
 			else if (slot is ValueSlot<int>)
 			{
 				AddControl(new IntegerField(), slot);

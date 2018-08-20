@@ -8,3 +8,5 @@ A bare bones stripped down version of the shader graph editor using UIElements
 * General Node slots and controls
 * Searchable New Node Window
 * Blackboard properties
+* Value Node
+* Control Views
