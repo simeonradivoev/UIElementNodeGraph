@@ -1,0 +1,12 @@
+{
+    "name": "NodeEditor-Editor",
+    "references": [
+        "NodeEditor"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false
+}

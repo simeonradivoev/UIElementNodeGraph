@@ -359,6 +359,8 @@ namespace NodeEditor
 
 		public void AddSlot(ISlot slot)
 		{
+			if(slot == null) throw new ArgumentNullException("slot");
+
 			// this will remove the old slot and add a new one
 			m_Slots.RemoveAll(x => x.id == slot.id);
 			m_Slots.Add(slot);
