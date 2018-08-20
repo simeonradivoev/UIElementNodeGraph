@@ -1,0 +1,205 @@
+/* THIS FILE IS FROM GRAPHVIEW BUT CONTAINS MODIFICATIONS */
+
+NodePort {
+    height: 24;
+    align-items: center;
+    padding-left: 4;
+    padding-right: 4;
+    port-color: rgb(200, 200, 200);
+    disabled-port-color: rgb(70, 70, 70);
+}
+
+NodePort.input {
+    flex-direction: row;
+}
+
+NodePort.output {
+    flex-direction: row-reverse;
+}
+
+NodePort > #connector {
+    border-color: rgb(70, 70, 70);
+    background-color: #212121;
+    width: 8;
+    height: 8;
+    border-radius: 8;
+    align-items: center;
+    justify-content: center;
+
+    margin-left: 4;
+    margin-right: 4;
+    border-left-width:1;
+    border-top-width:1;
+    border-right-width:1;
+    border-bottom-width:1;
+}
+
+NodePort > #connector:hover {
+    border-color:  #f0f0f0
+}
+
+NodePort > #connector > #cap
+{
+    background-color: #212121;
+    width: 4;
+    height: 4;
+    border-radius: 4;
+}
+
+NodePort > #connector > #cap:hover
+{
+    background-color: #f0f0f0;
+}
+
+NodePort > #connector.portHighlight {
+    border-color: #f0f0f0;
+}
+
+NodePort > #type {
+    text-color: #c1c1c1;
+    font-size:11;
+    height:16;
+    padding-left: 0;
+    padding-right: 0;
+    margin-left: 4;
+    margin-right: 4;
+}
+
+NodePort.input > #type {
+    text-alignment: middle-left;
+}
+
+NodePort.output > #type {
+    text-alignment:middle-right;
+}
+
+/*******************************/
+/* NodePorts colors by types */
+/*******************************/
+
+NodePort.typeTexture {
+    port-color:#FF8B8B;
+}
+
+NodePort.typeTexture2D {
+    /* Same as typeTexture */
+    port-color:#FF8B8B;
+}
+
+NodePort.typeTexture2DArray {
+    /* Same as typeTexture */
+    port-color:#FF8B8B;
+}
+
+NodePort.typeTexture3D {
+    /* Same as typeTexture */
+    port-color:#FF8B8B;
+}
+
+NodePort.typeCubemap {
+    /* Same as typeTexture */
+    port-color:#FF8B8B;
+}
+
+NodePort.typeGraphScript {
+    /* Todo: there is no such type in Unity atm */
+    port-color:#E681BA;
+}
+
+NodePort.typeFloat4 {
+    port-color:#FBCBF4;
+}
+
+NodePort.typeVector4 {
+    /* Same as typeFloat4 */
+    port-color:#FBCBF4;
+}
+
+NodePort.typeQuaternion {
+    /* Same as typeFloat4 */
+    port-color:#FBCBF4;
+}
+
+NodePort.typeColor {
+    /* Same as typeFloat4 */
+    port-color:#FBCBF4;
+}
+
+NodePort.typeInt {
+    port-color:#9481E6;
+}
+
+NodePort.typeInt32 {
+    /* Same as typeInt */
+    port-color:#9481E6;
+}
+
+/* TEMP STUFF THAT SHOULD ACTUALLY STAY IN GRAPHVIEW */
+NodePort.typeInt64 {
+    /* Same as typeInt */
+    /* todo we might want to differentiate that from int32 */
+    port-color:#9481E6;
+}
+
+NodePort.typeBoolean {
+    port-color:#9481E6;
+}
+
+NodePort.typeMatrix {
+    port-color:#8FC1DF;
+}
+
+NodePort.typeMatrix4x4 {
+    /* Same as typeMatrix */
+    port-color:#8FC1DF;
+}
+
+NodePort.typeGameObject {
+    port-color:#8FC1DF;
+}
+
+NodePort.typeFloat {
+    port-color:#84E4E7;
+}
+
+NodePort.typeFloat1 {
+    /* Same as typeFloat */
+    port-color:#84E4E7;
+}
+
+NodePort.typeSingle {
+    /* Same as typeFloat */
+    port-color:#84E4E7;
+}
+
+NodePort.typeDouble {
+    /* Same as typeFloat */
+    /* todo we might want to differentiate that from float */
+    port-color:#84E4E7;
+}
+
+NodePort.typeFloat2 {
+    port-color:#9AEF92;
+}
+
+NodePort.typeVector2 {
+    /* Same as typeFloat2 */
+    port-color:#9AEF92;
+}
+
+NodePort.typeComponent {
+    port-color:#C9F774;
+}
+
+NodePort.typeFloat3 {
+    port-color:#F6FF9A;
+}
+
+NodePort.typeVector3 {
+    /* Same as typeFloat3 */
+    port-color:#F6FF9A;
+}
+
+NodePort.typeString {
+    port-color:#FCD76E;
+}
