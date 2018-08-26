@@ -274,7 +274,7 @@ namespace NodeEditor.Scripts.Views
 				var dependentPropertyNodes = copyGraph.GetNodes<PropertyNode>().Where(x => x.propertyGuid == property.guid);
 				foreach (var node in dependentPropertyNodes)
 				{
-					node.owner = graphView.graph;
+					node.SetOwner(graphView.graph);
 					node.propertyGuid = copiedProperty.guid;
 				}
 			}

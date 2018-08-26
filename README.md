@@ -1,5 +1,5 @@
 # UIElementNodeGraph
-A bare bones stripped down version of the shader graph editor using UIElements
+A stripped down version of the shader graph editor with some tweaks using UIElements
 
 ![NodeEditor](https://github.com/simeonradivoev/UIElementNodeGraph/raw/master/Screenshot.png)
 

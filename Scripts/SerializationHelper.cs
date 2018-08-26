@@ -28,13 +28,20 @@ namespace NodeEditor
 			public string JSONnodeData;
 		}
 
-		public static JSONSerializedElement nullElement
+		[Serializable]
+		public struct JSONSerializedIndexedElement
 		{
-			get
-			{
-				return new JSONSerializedElement();
-			}
+			[SerializeField]
+			public TypeSerializationInfo typeInfo;
+
+			[SerializeField]
+			public int index;
+
+			[SerializeField]
+			public string JSONnodeData;
 		}
+
+		public static JSONSerializedElement nullElement => new JSONSerializedElement();
 
 		public static TypeSerializationInfo GetTypeSerializableAsString(Type type)
 		{
@@ -60,13 +67,33 @@ namespace NodeEditor
 			return null;
 		}
 
-		public static JSONSerializedElement Serialize<T>(T item)
+		public static JSONSerializedIndexedElement Serialize<T>(KeyValuePair<int, T> item, bool prettyPrint)
+		{
+			if (item.Value == null)
+				throw new ArgumentNullException("item", "Can not serialize null element");
+
+			var typeInfo = GetTypeSerializableAsString(item.Value.GetType());
+			var data = JsonUtility.ToJson(item.Value, true);
+
+			if (string.IsNullOrEmpty(data))
+				throw new ArgumentException(string.Format("Can not serialize {0}", item.Value));
+			;
+
+			return new JSONSerializedIndexedElement
+			{
+				typeInfo = typeInfo,
+				index = item.Key,
+				JSONnodeData = data
+			};
+		}
+
+		public static JSONSerializedElement Serialize<T>(T item,bool prettyPrint)
 		{
 			if (item == null)
 				throw new ArgumentNullException("item", "Can not serialize null element");
 
 			var typeInfo = GetTypeSerializableAsString(item.GetType());
-			var data = JsonUtility.ToJson(item, true);
+			var data = JsonUtility.ToJson(item, prettyPrint);
 
 			if (string.IsNullOrEmpty(data))
 				throw new ArgumentException(string.Format("Can not serialize {0}", item));
@@ -87,20 +114,29 @@ namespace NodeEditor
 			return info;
 		}
 
-		public static T Deserialize<T>(JSONSerializedElement item, Dictionary<TypeSerializationInfo, TypeSerializationInfo> remapper,  params object[] constructorArgs) where T : class
+		public static T Deserialize<T>(JSONSerializedIndexedElement item, Dictionary<TypeSerializationInfo, TypeSerializationInfo> remapper, params object[] constructorArgs) where T : class
 		{
-			if (!item.typeInfo.IsValid() || string.IsNullOrEmpty(item.JSONnodeData))
-				throw new ArgumentException(string.Format("Can not deserialize {0}, it is invalid", item));
+			return Deserialize<T>(item.JSONnodeData, item.typeInfo, remapper, constructorArgs);
+		}
 
-			TypeSerializationInfo info = item.typeInfo;
-			info.fullName = info.fullName.Replace("UnityEngine.MaterialGraph", "UnityEditor.ShaderGraph");
-			info.fullName = info.fullName.Replace("UnityEngine.Graphing", "UnityEditor.Graphing");
+		public static T Deserialize<T>(JSONSerializedElement item, Dictionary<TypeSerializationInfo, TypeSerializationInfo> remapper, params object[] constructorArgs) where T : class
+		{
+			return Deserialize<T>(item.JSONnodeData, item.typeInfo, remapper, constructorArgs);
+		}
+
+		public static T Deserialize<T>(string data, TypeSerializationInfo typeInfo, Dictionary<TypeSerializationInfo, TypeSerializationInfo> remapper,  params object[] constructorArgs) where T : class
+		{
+			if (!typeInfo.IsValid() || string.IsNullOrEmpty(data))
+				throw new ArgumentException(string.Format("Can not deserialize {0} of type {1}, it is invalid", data, typeInfo));
+
+			typeInfo.fullName = typeInfo.fullName.Replace("UnityEngine.MaterialGraph", "UnityEditor.ShaderGraph");
+			typeInfo.fullName = typeInfo.fullName.Replace("UnityEngine.Graphing", "UnityEditor.Graphing");
 			if (remapper != null)
-				info = DoTypeRemap(info, remapper);
+				typeInfo = DoTypeRemap(typeInfo, remapper);
 
-			var type = GetTypeFromSerializedString(info);
+			var type = GetTypeFromSerializedString(typeInfo);
 			if (type == null)
-				throw new ArgumentException(string.Format("Can not deserialize ({0}), type is invalid", info.fullName));
+				throw new ArgumentException(string.Format("Can not deserialize ({0}), type is invalid", typeInfo.fullName));
 
 			T instance;
 			try
@@ -114,10 +150,30 @@ namespace NodeEditor
 
 			if (instance != null)
 			{
-				JsonUtility.FromJsonOverwrite(item.JSONnodeData, instance);
+				JsonUtility.FromJsonOverwrite(data, instance);
 				return instance;
 			}
 			return null;
+		}
+
+		public static List<JSONSerializedIndexedElement> Serialize<T>(IDictionary<int,T> dictionary, bool prettyPrint)
+		{
+			var result = new List<JSONSerializedIndexedElement>();
+			if (dictionary == null)
+				return result;
+
+			foreach (var element in dictionary)
+			{
+				try
+				{
+					result.Add(Serialize(element, prettyPrint));
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+				}
+			}
+			return result;
 		}
 
 		public static List<JSONSerializedElement> Serialize<T>(IEnumerable<T> list)
@@ -130,7 +186,7 @@ namespace NodeEditor
 			{
 				try
 				{
-					result.Add(Serialize(element));
+					result.Add(Serialize(element,false));
 				}
 				catch (Exception e)
 				{
@@ -159,6 +215,42 @@ namespace NodeEditor
 				}
 			}
 			return result;
+		}
+
+		public static void Deserialize<T>(IDictionary<int,T> dictionary,IEnumerable<JSONSerializedIndexedElement> list, Dictionary<TypeSerializationInfo, TypeSerializationInfo> remapper, params object[] constructorArgs) where T : class
+		{
+			foreach (var element in list)
+			{
+				try
+				{
+					T existingElement;
+					if (dictionary.TryGetValue(element.index,out existingElement))
+					{
+						TypeSerializationInfo info = element.typeInfo;
+						var type = GetTypeFromSerializedString(info);
+						if (type == null)
+							throw new ArgumentException(string.Format("Can not deserialize ({0}), type is invalid", info.fullName));
+
+						if (!type.IsInstanceOfType(existingElement))
+						{
+							dictionary[element.index] = Deserialize<T>(element, remapper, constructorArgs);
+						}
+						else
+						{
+							JsonUtility.FromJsonOverwrite(element.JSONnodeData,existingElement);
+						}
+					}
+					else
+					{
+						dictionary.Add(element.index,Deserialize<T>(element, remapper));
+					}
+				}
+				catch (Exception e)
+				{
+					Debug.LogException(e);
+					Debug.LogError(element.JSONnodeData);
+				}
+			}
 		}
 	}
 }

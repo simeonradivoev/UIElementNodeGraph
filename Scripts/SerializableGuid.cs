@@ -22,10 +22,7 @@ namespace NodeEditor
 		[SerializeField]
 		private string m_GuidSerialized;
 
-		public Guid guid
-		{
-			get { return m_Guid; }
-		}
+		public Guid guid => m_Guid;
 
 		public virtual void OnBeforeSerialize()
 		{

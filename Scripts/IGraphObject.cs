@@ -1,5 +1,4 @@
-﻿
-namespace NodeEditor
+﻿namespace NodeEditor
 {
 	public interface IGraphObject
 	{

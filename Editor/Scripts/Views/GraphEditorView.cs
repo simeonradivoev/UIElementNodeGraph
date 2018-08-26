@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NodeEditor.Scripts;
+using NodeEditor.Scripts.Views;
 using NodeEditor.Util;
 using UnityEditor;
+using UnityEditor.Experimental.UIElements;
 using UnityEditor.Experimental.UIElements.GraphView;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 using GEdge = UnityEditor.Experimental.UIElements.GraphView.Edge;
 using Object = UnityEngine.Object;
 
-namespace NodeEditor.Scripts.Views
+namespace NodeEditor.Editor.Scripts.Views
 {
 	[Serializable]
 	class FloatingWindowsLayout
@@ -114,7 +117,7 @@ namespace NodeEditor.Scripts.Views
 			foreach (var node in graph.GetNodes<INode>())
 				AddNode(node);
 
-			foreach (var edge in graph.edges)
+			foreach (var edge in graph.GetEdges())
 				AddEdge(edge);
 
 			Add(content);
@@ -177,6 +180,7 @@ namespace NodeEditor.Scripts.Views
 					output = sourceAnchor,
 					input = targetAnchor
 				};
+
 				edgeView.output.Connect(edgeView);
 				edgeView.input.Connect(edgeView);
 				m_GraphView.AddElement(edgeView);

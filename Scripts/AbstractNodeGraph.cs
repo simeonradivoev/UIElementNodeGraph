@@ -7,18 +7,37 @@ using UnityEngine;
 
 namespace NodeEditor
 {
-	public abstract class AbstractNodeGraph : IGraph, ISerializationCallbackReceiver
+	public abstract class AbstractNodeGraph : IGraph, ISerializationCallbackReceiver, IDisposable
 	{
 		public IGraphObject owner { get; set; }
+
+		public object context { get; set; }
+
+		public event Action<INode> onNodeAdded;
 
 		#region Property data
 		[NonSerialized]
 		List<INodeProperty> m_Properties = new List<INodeProperty>();
 
-		public IEnumerable<INodeProperty> properties
+		[NonSerialized]
+		Dictionary<Guid,INodeProperty> m_PropertyDictionary = new Dictionary<Guid, INodeProperty>();
+
+		public ReadOnlyList<INodeProperty> GetProperties()
 		{
-			get { return m_Properties; }
+			return new ReadOnlyList<INodeProperty>(m_Properties);
 		}
+
+		public INodeProperty GetProperty(Guid id)
+		{
+			INodeProperty prop;
+			if (m_PropertyDictionary.TryGetValue(id, out prop))
+			{
+				return prop;
+			}
+			return null;
+		}
+
+		public IEnumerable<INodeProperty> properties => m_Properties;
 
 		[SerializeField]
 		List<SerializationHelper.JSONSerializedElement> m_SerializedProperties = new List<SerializationHelper.JSONSerializedElement>();
@@ -26,34 +45,22 @@ namespace NodeEditor
 		[NonSerialized]
 		List<INodeProperty> m_AddedProperties = new List<INodeProperty>();
 
-		public IEnumerable<INodeProperty> addedProperties
-		{
-			get { return m_AddedProperties; }
-		}
+		public IEnumerable<INodeProperty> addedProperties => m_AddedProperties;
 
 		[NonSerialized]
 		List<Guid> m_RemovedProperties = new List<Guid>();
 
-		public IEnumerable<Guid> removedProperties
-		{
-			get { return m_RemovedProperties; }
-		}
+		public IEnumerable<Guid> removedProperties => m_RemovedProperties;
 
 		[NonSerialized]
 		List<INodeProperty> m_MovedProperties = new List<INodeProperty>();
 
-		public IEnumerable<INodeProperty> movedProperties
-		{
-			get { return m_MovedProperties; }
-		}
+		public IEnumerable<INodeProperty> movedProperties => m_MovedProperties;
 
 		[SerializeField]
 		SerializableGuid m_GUID = new SerializableGuid();
 
-		public Guid guid
-		{
-			get { return m_GUID.guid; }
-		}
+		public Guid guid => m_GUID.guid;
 
 		#endregion
 
@@ -63,7 +70,7 @@ namespace NodeEditor
 		Stack<Identifier> m_FreeNodeTempIds = new Stack<Identifier>();
 
 		[NonSerialized]
-		List<AbstractNode> m_Nodes = new List<AbstractNode>();
+		List<INode> m_Nodes = new List<INode>();
 
 		[NonSerialized]
 		Dictionary<Guid, INode> m_NodeDictionary = new Dictionary<Guid, INode>();
@@ -73,32 +80,28 @@ namespace NodeEditor
 			return m_Nodes.Where(x => x != null).OfType<T>();
 		}
 
+		public ReadOnlyList<INode> GetNodes()
+		{
+			return new ReadOnlyList<INode>(m_Nodes);
+		}
+
 		[SerializeField]
 		List<SerializationHelper.JSONSerializedElement> m_SerializableNodes = new List<SerializationHelper.JSONSerializedElement>();
 
 		[NonSerialized]
 		List<INode> m_AddedNodes = new List<INode>();
 
-		public IEnumerable<INode> addedNodes
-		{
-			get { return m_AddedNodes; }
-		}
+		public IEnumerable<INode> addedNodes => m_AddedNodes;
 
 		[NonSerialized]
 		List<INode> m_RemovedNodes = new List<INode>();
 
-		public IEnumerable<INode> removedNodes
-		{
-			get { return m_RemovedNodes; }
-		}
+		public IEnumerable<INode> removedNodes => m_RemovedNodes;
 
 		[NonSerialized]
 		List<INode> m_PastedNodes = new List<INode>();
 
-		public IEnumerable<INode> pastedNodes
-		{
-			get { return m_PastedNodes; }
-		}
+		public IEnumerable<INode> pastedNodes => m_PastedNodes;
 
 		#endregion
 
@@ -107,9 +110,19 @@ namespace NodeEditor
 		[NonSerialized]
 		List<IEdge> m_Edges = new List<IEdge>();
 
-		public IEnumerable<IEdge> edges
+		public ReadOnlyList<IEdge> GetEdges()
 		{
-			get { return m_Edges; }
+			return new ReadOnlyList<IEdge>(m_Edges);
+		}
+
+		public ReadOnlyList<IEdge> GetEdges(Guid nodeId)
+		{
+			List<IEdge> edges;
+			if (m_NodeEdges.TryGetValue(nodeId, out edges))
+			{
+				return new ReadOnlyList<IEdge>(edges);
+			}
+			return new ReadOnlyList<IEdge>();
 		}
 
 		[SerializeField]
@@ -121,20 +134,16 @@ namespace NodeEditor
 		[NonSerialized]
 		List<IEdge> m_AddedEdges = new List<IEdge>();
 
-		public IEnumerable<IEdge> addedEdges
-		{
-			get { return m_AddedEdges; }
-		}
+		public IEnumerable<IEdge> addedEdges => m_AddedEdges;
 
 		[NonSerialized]
 		List<IEdge> m_RemovedEdges = new List<IEdge>();
 
-		public IEnumerable<IEdge> removedEdges
-		{
-			get { return m_RemovedEdges; }
-		}
+		public IEnumerable<IEdge> removedEdges => m_RemovedEdges;
 
 		#endregion
+
+		private bool m_Initialized;
 
 		public string name { get; set; }
 
@@ -180,23 +189,25 @@ namespace NodeEditor
 
 		void AddNodeNoValidate(INode node)
 		{
-			var materialNode = (AbstractNode)node;
-			materialNode.owner = this;
+			node.SetOwner(this);
 			if (m_FreeNodeTempIds.Any())
 			{
 				var id = m_FreeNodeTempIds.Pop();
 				id.IncrementVersion();
-				materialNode.tempId = id;
-				m_Nodes[id.index] = materialNode;
+				node.tempId = id;
+				m_Nodes[id.index] = node;
 			}
 			else
 			{
 				var id = new Identifier(m_Nodes.Count);
-				materialNode.tempId = id;
-				m_Nodes.Add(materialNode);
+				node.tempId = id;
+				m_Nodes.Add(node);
 			}
-			m_NodeDictionary.Add(materialNode.guid, materialNode);
-			m_AddedNodes.Add(materialNode);
+			m_NodeDictionary.Add(node.guid, node);
+			m_AddedNodes.Add(node);
+			var abstractNode = node as AbstractNode;
+			abstractNode?.OnAdd();
+			onNodeAdded?.Invoke(node);
 		}
 
 		public void RemoveNode(INode node)
@@ -209,14 +220,16 @@ namespace NodeEditor
 
 		void RemoveNodeNoValidate(INode node)
 		{
-			var materialNode = (AbstractNode)node;
-			if (!materialNode.canDeleteNode)
+			var abstractNode = (AbstractNode)node;
+			if (!abstractNode.canDeleteNode)
 				return;
 
-			m_Nodes[materialNode.tempId.index] = null;
-			m_FreeNodeTempIds.Push(materialNode.tempId);
-			m_NodeDictionary.Remove(materialNode.guid);
-			m_RemovedNodes.Add(materialNode);
+			abstractNode.Dispose();
+			abstractNode.OnRemove();
+			m_Nodes[abstractNode.tempId.index] = null;
+			m_FreeNodeTempIds.Push(abstractNode.tempId);
+			m_NodeDictionary.Remove(abstractNode.guid);
+			m_RemovedNodes.Add(abstractNode);
 		}
 
 		void AddEdgeToNodeEdges(IEdge edge)
@@ -255,19 +268,20 @@ namespace NodeEditor
 			if (fromSlot.isOutputSlot == toSlot.isOutputSlot)
 				return null;
 
-			var outputSlot = fromSlot.isOutputSlot ? fromSlotRef : toSlotRef;
-			var inputSlot = fromSlot.isInputSlot ? fromSlotRef : toSlotRef;
+			var inputSlot = fromSlot.isInputSlot ? fromSlot : toSlot;
+			var outputSlotRef = fromSlot.isOutputSlot ? fromSlotRef : toSlotRef;
+			var inputSlotRef = fromSlot.isInputSlot ? fromSlotRef : toSlotRef;
 
-			s_TempEdges.Clear();
-			GetEdges(inputSlot, s_TempEdges);
-
-			// remove any inputs that exits before adding
-			foreach (var edge in s_TempEdges)
+			if (!inputSlot.allowMultipleConnections)
 			{
-				RemoveEdgeNoValidate(edge);
+				// remove any inputs that exits before adding if only a single connection is allowed
+				foreach (var edge in this.GetEdges(inputSlotRef))
+				{
+					RemoveEdgeNoValidate(edge);
+				}
 			}
 
-			var newEdge = new Edge(outputSlot, inputSlot);
+			var newEdge = new Edge(outputSlotRef, inputSlotRef);
 			m_Edges.Add(newEdge);
 			m_AddedEdges.Add(newEdge);
 			AddEdgeToNodeEdges(newEdge);
@@ -350,30 +364,6 @@ namespace NodeEditor
 			return default(T);
 		}
 
-		public void GetEdges(SlotReference s, List<IEdge> foundEdges)
-		{
-			var node = GetNodeFromGuid(s.nodeGuid);
-			if (node == null)
-			{
-				Debug.LogWarning("Node does not exist");
-				return;
-			}
-			ISlot slot = node.FindSlot<ISlot>(s.slotId);
-
-			List<IEdge> candidateEdges;
-			if (!m_NodeEdges.TryGetValue(s.nodeGuid, out candidateEdges))
-				return;
-
-			foreach (var edge in candidateEdges)
-			{
-				var cs = slot.isInputSlot ? edge.inputSlot : edge.outputSlot;
-				if (cs.nodeGuid == s.nodeGuid && cs.slotId == s.slotId)
-					foundEdges.Add(edge);
-			}
-		}
-
-		static List<IEdge> s_TempEdges = new List<IEdge>();
-
 		public void AddShaderProperty(INodeProperty property)
 		{
 			if (property == null)
@@ -383,6 +373,7 @@ namespace NodeEditor
 				return;
 
 			m_Properties.Add(property);
+			m_PropertyDictionary.Add(property.guid,property);
 			m_AddedProperties.Add(property);
 		}
 
@@ -431,6 +422,7 @@ namespace NodeEditor
 
 		void RemoveShaderPropertyNoValidate(Guid guid)
 		{
+			m_PropertyDictionary.Remove(guid);
 			if (m_Properties.RemoveAll(x => x.guid == guid) > 0)
 			{
 				m_RemovedProperties.Add(guid);
@@ -469,6 +461,79 @@ namespace NodeEditor
 			RemoveNodeNoValidate(propertyNode);
 		}
 
+		public void SortEdges(Guid nodeId)
+		{
+			var node = GetNodeFromGuid(nodeId);
+			if (node != null)
+			{
+				var tmpNodes = new HashSet<Guid> {nodeId};
+				List<IEdge> edgesTmp;
+				if (m_NodeEdges.TryGetValue(nodeId, out edgesTmp))
+				{
+					foreach (var edge in edgesTmp)
+					{
+						var otherNodeRef = edge.inputSlot.nodeGuid == nodeId ? edge.outputSlot : edge.inputSlot;
+						tmpNodes.Add(otherNodeRef.nodeGuid);
+					}
+				}
+
+				foreach (var tmpNode in tmpNodes)
+				{
+					if (m_NodeEdges.TryGetValue(tmpNode, out edgesTmp))
+					{
+						edgesTmp.Sort((lhs,rhs) => owner.graph.GetNodeFromGuid(lhs.outputSlot.nodeGuid).CompareTo(owner.graph.GetNodeFromGuid(rhs.outputSlot.nodeGuid)));
+					}
+				}
+
+				foreach (var tmpNode in tmpNodes)
+				{
+					RebuildEdgeCache(tmpNode);
+				}
+			}
+		}
+
+		public void RebuildEdgeCache(Guid nodeId)
+		{
+			var node = GetNodeFromGuid(nodeId);
+			if (node != null)
+			{
+				foreach (var slot in node.GetSlots<NodeSlot>())
+				{
+					RebuildEdgeCache(node.GetSlotReference(slot.id));
+				}
+			}
+		}
+
+		public void RebuildEdgeCache(SlotReference slotReference)
+		{
+			var node = GetNodeFromGuid(slotReference.nodeGuid);
+			if (node != null)
+			{
+				var slot = node.FindSlot<NodeSlot>(slotReference.slotId);
+				if (slot != null)
+				{
+					slot.ClearConnectionCache();
+					List<IEdge> edges;
+					if(m_NodeEdges.TryGetValue(slotReference.nodeGuid, out edges))
+					{
+						foreach (var edge in edges.Where(e => slot.isInputSlot ? e.inputSlot.Equals(slotReference) : e.outputSlot.Equals(slotReference)).OrderBy(e => GetNodeFromGuid(e.outputSlot.nodeGuid)))
+						{
+							SlotReference otherSlotRef = slot.isInputSlot ? edge.outputSlot : edge.inputSlot;
+							var otherNode = GetNodeFromGuid(otherSlotRef.nodeGuid);
+							if (otherNode != null)
+							{
+								var otherSlot = otherNode.FindSlot<ISlot>(otherSlotRef.slotId);
+								if (otherSlot != null)
+								{
+									slot.AddConnectionToCache(otherSlot);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
 		public void ValidateGraph()
 		{
 			var propertyNodes = GetNodes<PropertyNode>().Where(n => !m_Properties.Any(p => p.guid == n.propertyGuid)).ToArray();
@@ -480,7 +545,7 @@ namespace NodeEditor
 			//manually modifies serialized data
 			//of if they delete a node in the inspector
 			//debug view.
-			foreach (var edge in edges.ToArray())
+			foreach (var edge in m_Edges.ToArray())
 			{
 				var outputNode = GetNodeFromGuid(edge.outputSlot.nodeGuid);
 				var inputNode = GetNodeFromGuid(edge.inputSlot.nodeGuid);
@@ -514,6 +579,25 @@ namespace NodeEditor
 					Debug.LogWarningFormat("Added edge is invalid: {0} -> {1}\n{2}", edge.outputSlot.nodeGuid, edge.inputSlot.nodeGuid, Environment.StackTrace);
 					m_AddedEdges.Remove(edge);
 				}
+			}
+
+			var dirtySlots = new HashSet<SlotReference>();
+
+			foreach (var edge in m_RemovedEdges)
+			{
+				dirtySlots.Add(edge.inputSlot);
+				dirtySlots.Add(edge.outputSlot);
+			}
+
+			foreach (var edge in m_AddedEdges)
+			{
+				dirtySlots.Add(edge.inputSlot);
+				dirtySlots.Add(edge.outputSlot);
+			}
+
+			foreach (var slot in dirtySlots)
+			{
+				RebuildEdgeCache(slot);
 			}
 		}
 
@@ -560,10 +644,10 @@ namespace NodeEditor
 
 			ValidateGraph();
 
-			foreach (var node in other.GetNodes<INode>())
+			foreach (var node in other.GetNodes())
 				AddNodeNoValidate(node);
 
-			foreach (var edge in other.edges)
+			foreach (var edge in other.GetEdges())
 				ConnectNoValidate(edge.outputSlot, edge.inputSlot);
 
 			ValidateGraph();
@@ -645,12 +729,16 @@ namespace NodeEditor
 		{
 			// have to deserialize 'globals' before nodes
 			m_Properties = SerializationHelper.Deserialize<INodeProperty>(m_SerializedProperties, GraphUtil.GetLegacyTypeRemapping());
+			foreach (var property in m_Properties)
+			{
+				m_PropertyDictionary.Add(property.guid,property);
+			}
 			var nodes = SerializationHelper.Deserialize<INode>(m_SerializableNodes, GraphUtil.GetLegacyTypeRemapping());
-			m_Nodes = new List<AbstractNode>(nodes.Count);
+			m_Nodes = new List<INode>(nodes.Count);
 			m_NodeDictionary = new Dictionary<Guid, INode>(nodes.Count);
 			foreach (var node in nodes.OfType<AbstractNode>())
 			{
-				node.owner = this;
+				node.SetOwner(this);
 				node.UpdateNodeAfterDeserialization();
 				node.tempId = new Identifier(m_Nodes.Count);
 				m_Nodes.Add(node);
@@ -663,6 +751,16 @@ namespace NodeEditor
 			m_SerializableEdges = null;
 			foreach (var edge in m_Edges)
 				AddEdgeToNodeEdges(edge);
+
+			HashSet<SlotReference> slots = new HashSet<SlotReference>();
+			foreach (var edge in m_Edges)
+			{
+				slots.Add(edge.inputSlot);
+				slots.Add(edge.outputSlot);
+			}
+
+			foreach (var slot in slots)
+				RebuildEdgeCache(slot);
 		}
 
 		public void OnEnable()
@@ -670,6 +768,14 @@ namespace NodeEditor
 			foreach (var node in GetNodes<INode>().OfType<IOnAssetEnabled>())
 			{
 				node.OnEnable();
+			}
+		}
+
+		public void Dispose()
+		{
+			foreach (var disposable in GetNodes<INode>().OfType<IDisposable>())
+			{
+				disposable.Dispose();
 			}
 		}
 	}

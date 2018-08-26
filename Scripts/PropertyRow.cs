@@ -8,10 +8,7 @@ namespace NodeEditor
 		VisualElement m_ContentContainer;
 		VisualElement m_LabelContainer;
 
-		public override VisualElement contentContainer
-		{
-			get { return m_ContentContainer; }
-		}
+		public override VisualElement contentContainer => m_ContentContainer;
 
 		public VisualElement label
 		{

@@ -19,21 +19,20 @@ namespace NodeEditor.Nodes
             UpdateNodeAfterDeserialization();
         }
 
-        public override string documentationURL
-        {
-            get { return "https://github.com/Unity-Technologies/ShaderGraph/wiki/Property-Node"; }
-        }
+        public override string documentationURL => "https://github.com/Unity-Technologies/ShaderGraph/wiki/Property-Node";
 
-        private void UpdateNode()
+	    private void UpdateNode()
         {
             var graph = owner as AbstractNodeGraph;
             var property = graph.properties.FirstOrDefault(x => x.guid == propertyGuid);
             if (property == null)
                 return;
 
-	        var valueSlot = (NodeSlot)Activator.CreateInstance(typeof(ValueSlot<>).MakeGenericType(property.propertyType), OutputSlotId, property.displayName, SlotType.Output,false);
+	        var valueSlot = (NodeSlot)Activator.CreateInstance(typeof(ValueSlot<>).MakeGenericType(property.propertyType));
+	        valueSlot.id = OutputSlotId;
+	        valueSlot.displayName = property.displayName;
+	        valueSlot.slotType = SlotType.Output;
 	        AddSlot(valueSlot);
-			RemoveSlotsNameNotMatching(new[] { OutputSlotId });
 		}
 
         public Guid propertyGuid

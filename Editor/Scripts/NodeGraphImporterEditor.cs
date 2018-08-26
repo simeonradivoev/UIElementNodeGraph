@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using NodeEditor.Editor.Scripts;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEditor.Experimental.AssetImporters;
@@ -22,9 +23,18 @@ namespace NodeEditor.Scripts
 		internal static bool ShowGraphEditWindow(string path)
 		{
 			var guid = AssetDatabase.AssetPathToGUID(path);
-			var extension = Path.GetExtension(path);
-			if (extension != ".NodeGraph")
-				return false;
+			var asset = AssetDatabase.LoadMainAssetAtPath(path);
+
+			if (asset is GraphObjectBase)
+			{
+				if (asset is TmpGraphObject) return false;
+			}
+			else
+			{
+				var extension = Path.GetExtension(path);
+				if (extension != ".NodeGraph")
+					return false;
+			}
 
 			var foundWindow = false;
 			foreach (var w in Resources.FindObjectsOfTypeAll<NodeGraphEditWindow>())

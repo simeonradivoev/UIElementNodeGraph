@@ -5,6 +5,20 @@ NodeView.graphElement.node.MaterialNode {
     margin-right: 0;
 }
 
+NodeView #title-label {
+	flex-grow: 2;
+}
+
+NodeView #title-field {
+	text-alignment: middle-left;
+}
+
+NodeView #priority-field {
+	text-alignment: middle-left;
+	height: 16;
+	align-self: center;
+}
+
 NodeView #collapsible-area {
     width: 0;
     height: 0;
@@ -151,4 +165,16 @@ NodeView > #settings-container {
 
 .node.expanded > #node-border > #title > #button-container > #collapse-button > #icon {
     background-image : resource("GraphView/Nodes/NodeChevronDown.png");
+}
+
+.ControlField {
+	flex-direction: row;
+}
+
+.ControlField #control-label {
+	width: 100;
+}
+
+.ControlField #value-field{
+	flex-grow: 1;
 }

@@ -10,10 +10,7 @@ namespace NodeEditor
 		[NonSerialized] private Type type;
 		[SerializeField] private string serialziedType;
 
-		public Type Type
-		{
-			get { return type; }
-		}
+		public Type Type => type;
 
 		public SerializedType(Type type)
 		{

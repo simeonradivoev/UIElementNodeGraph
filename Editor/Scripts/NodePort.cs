@@ -17,7 +17,7 @@ namespace NodeEditor.Scripts
 		public static Port Create(NodeSlot slot, IEdgeConnectorListener connectorListener)
 		{
 			var port = new NodePort(Orientation.Horizontal, slot.isInputSlot ? Direction.Input : Direction.Output,
-				slot.isInputSlot ? Capacity.Single : Capacity.Multi, null)
+				slot.isInputSlot || slot.allowMultipleConnections ? Capacity.Single : Capacity.Multi, null)
 			{
 				m_EdgeConnector = new EdgeConnector<UnityEditor.Experimental.UIElements.GraphView.Edge>(connectorListener),
 			};

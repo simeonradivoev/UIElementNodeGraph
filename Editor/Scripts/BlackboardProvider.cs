@@ -192,6 +192,8 @@ namespace NodeEditor.Scripts
 			gm.AddItem(new GUIContent("Rect"),false,()=> AddProperty(new ValueProperty<Rect>(),true));
 			gm.AddItem(new GUIContent("Texture2D"),false,()=> AddProperty(new ValueProperty<Texture2D>(),true));
 			gm.AddItem(new GUIContent("Cubemap"),false,()=> AddProperty(new ValueProperty<Cubemap>(),true));
+			gm.AddItem(new GUIContent("Gradient"),false,()=> AddProperty(new ValueProperty<Gradient>(),true));
+			gm.AddItem(new GUIContent("AnimationCureve"),false,()=> AddProperty(new ValueProperty<AnimationCurve>(),true));
 			gm.ShowAsContext();
 		}
 

@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace NodeEditor
 {
-	public class AbstractNode : INode, ISerializationCallbackReceiver
+	public class AbstractNode : INode, ISerializationCallbackReceiver, IDisposable
 	{
 		protected static List<NodeSlot> s_TempSlots = new List<NodeSlot>();
 		protected static List<IEdge> s_TempEdges = new List<IEdge>();
@@ -21,15 +21,19 @@ namespace NodeEditor
 
 		[SerializeField] private DrawState m_DrawState;
 
-		[NonSerialized] private List<ISlot> m_Slots = new List<ISlot>();
+		[NonSerialized] private Dictionary<int, ISlot> m_Slots = new Dictionary<int, ISlot>();
 
-		[SerializeField] List<SerializationHelper.JSONSerializedElement> m_SerializableSlots = new List<SerializationHelper.JSONSerializedElement>();
+		[SerializeField] List<SerializationHelper.JSONSerializedIndexedElement> m_SerializableSlots = new List<SerializationHelper.JSONSerializedIndexedElement>();
 
 		[NonSerialized] private bool m_HasError;
 
+		[NonSerialized] private IGraph m_Owner;
+
+		[SerializeField] private int m_Priority;
+
 		public Identifier tempId { get; set; }
 
-		public IGraph owner { get; set; }
+		public IGraph owner => m_Owner;
 
 		OnNodeModified m_OnModified;
 
@@ -49,10 +53,7 @@ namespace NodeEditor
 				m_OnModified(this, scope);
 		}
 
-		public Guid guid
-		{
-			get { return m_Guid; }
-		}
+		public Guid guid => m_Guid;
 
 		public string name
 		{
@@ -60,14 +61,29 @@ namespace NodeEditor
 			set { m_Name = value; }
 		}
 
-		public virtual string documentationURL
-		{
-			get { return null; }
+		public virtual string documentationURL => null;
+
+		public virtual bool canDeleteNode => true;
+
+		public int priority { get { return m_Priority;}
+			set
+			{
+				if (m_Priority != value)
+				{
+					m_Priority = value;
+					OnPriorityChange();
+				}
+			}
 		}
 
-		public virtual bool canDeleteNode
+		private void OnPriorityChange()
 		{
-			get { return true; }
+			var abstractNodeGraph = owner as AbstractNodeGraph;
+			if (abstractNodeGraph != null)
+			{
+				abstractNodeGraph.SortEdges(guid);
+			}
+			Dirty(ModificationScope.Node);
 		}
 
 		public DrawState drawState
@@ -79,6 +95,8 @@ namespace NodeEditor
 				Dirty(ModificationScope.Node);
 			}
 		}
+
+		protected IEnumerable<ISlot> slots => m_Slots.Values;
 
 		[SerializeField] bool m_PreviewExpanded = true;
 
@@ -95,32 +113,17 @@ namespace NodeEditor
 		}
 
 		// Nodes that want to have a preview area can override this and return true
-		public virtual bool hasPreview
-		{
-			get { return false; }
-		}
+		public virtual bool hasPreview => false;
 
-		public virtual PreviewMode previewMode
-		{
-			get { return PreviewMode.Preview2D; }
-		}
+		public virtual PreviewMode previewMode => PreviewMode.Preview2D;
 
 		// Nodes that want to have a preview area can override this and return true
 
-		public virtual bool allowedInSubGraph
-		{
-			get { return true; }
-		}
+		public virtual bool allowedInSubGraph => true;
 
-		public virtual bool allowedInMainGraph
-		{
-			get { return true; }
-		}
+		public virtual bool allowedInMainGraph => true;
 
-		public virtual bool allowedInLayerGraph
-		{
-			get { return true; }
-		}
+		public virtual bool allowedInLayerGraph => true;
 
 		public virtual bool hasError
 		{
@@ -146,8 +149,9 @@ namespace NodeEditor
 			}
 		}
 
-		protected AbstractNode()
+		public AbstractNode()
 		{
+			name = GetType().Name;
 			m_DrawState.expanded = true;
 			m_Guid = Guid.NewGuid();
 			version = 0;
@@ -161,7 +165,7 @@ namespace NodeEditor
 
 		public void GetInputSlots<T>(List<T> foundSlots) where T : ISlot
 		{
-			foreach (var slot in m_Slots)
+			foreach (var slot in m_Slots.Values)
 			{
 				if (slot.isInputSlot && slot is T)
 					foundSlots.Add((T) slot);
@@ -170,7 +174,7 @@ namespace NodeEditor
 
 		public void GetOutputSlots<T>(List<T> foundSlots) where T : ISlot
 		{
-			foreach (var slot in m_Slots)
+			foreach (var slot in m_Slots.Values)
 			{
 				if (slot.isOutputSlot && slot is T)
 					foundSlots.Add((T) slot);
@@ -179,10 +183,107 @@ namespace NodeEditor
 
 		public void GetSlots<T>(List<T> foundSlots) where T : ISlot
 		{
-			foreach (var slot in m_Slots)
+			foreach (var slot in m_Slots.Values)
 			{
 				if (slot is T)
 					foundSlots.Add((T) slot);
+			}
+		}
+
+		public T GetSlotValue<T>(ISlot inputSlot)
+		{
+			var nodeSlot = inputSlot as NodeSlot;
+			if (nodeSlot != null)
+			{
+				var con = nodeSlot.GetSlotConnectionCache().FirstOrDefault();
+
+				if (con != null)
+				{
+					var hasValueSlot = con as IHasValue<T>;
+					if (hasValueSlot != null)
+						return hasValueSlot.value;
+
+					var hasValueBase = con as IHasValue;
+					if (hasValueBase != null)
+						return (T) hasValueBase.value;
+				}
+
+				var hasValueInput = inputSlot as IHasValue<T>;
+				if (hasValueInput != null)
+					return hasValueInput.value;
+			}
+			else
+			{
+				var edge = owner.GetEdge(inputSlot.slotReference);
+
+				if (edge != null)
+				{
+					var fromSocketRef = edge.outputSlot;
+					var fromNode = owner.GetNodeFromGuid<AbstractNode>(fromSocketRef.nodeGuid);
+					if (fromNode == null)
+						return default(T);
+
+					var slot = fromNode.FindValueOutputSlot<T>(fromSocketRef.slotId);
+					if (slot == null)
+						return default(T);
+
+					return slot.value;
+				}
+
+				var hasValue = inputSlot as IHasValue<T>;
+				return hasValue != null ? hasValue.value : default(T);
+			}
+
+			return default(T);
+		}
+
+		public void GetSlotValues<T>(ISlot inputSlot,IList<T> values)
+		{
+			var nodeSlot = inputSlot as NodeSlot;
+			if (nodeSlot != null)
+			{
+				var cache = nodeSlot.GetSlotConnectionCache();
+				foreach (var slot in cache)
+				{
+					var hasValueSlot = slot as IHasValue<T>;
+					if (hasValueSlot != null)
+					{
+						values.Add(hasValueSlot.value);
+					}
+					else
+					{
+						var hasValueBase = slot as IHasValue;
+						if (hasValueBase != null)
+							values.Add((T)hasValueBase.value);
+					}
+				}
+			}
+			else
+			{
+				var edges = ListPool<IEdge>.Get();
+				owner.GetEdges(inputSlot.slotReference, edges);
+				foreach (var edge in edges)
+				{
+					var fromSocketRef = edge.outputSlot;
+					var fromNode = owner.GetNodeFromGuid<AbstractNode>(fromSocketRef.nodeGuid);
+					if (fromNode == null)
+					{
+						values.Add(default(T));
+					}
+					else
+					{
+						var slot = fromNode.FindValueOutputSlot<T>(fromSocketRef.slotId);
+						if (slot == null)
+						{
+							values.Add(default(T));
+						}
+						else
+						{
+							values.Add(slot.value);
+						}
+					}
+				}
+				ListPool<IEdge>.Release(edges);
 			}
 		}
 
@@ -192,24 +293,7 @@ namespace NodeEditor
 			if (inputSlot == null)
 				return default(T);
 
-			var edge = owner.GetEdges(inputSlot.slotReference).FirstOrDefault();
-
-			if (edge != null)
-			{
-				var fromSocketRef = edge.outputSlot;
-				var fromNode = owner.GetNodeFromGuid<AbstractNode>(fromSocketRef.nodeGuid);
-				if (fromNode == null)
-					return default(T);
-
-				var slot = fromNode.FindOutputSlot<NodeSlot>(fromSocketRef.slotId);
-				if (slot == null)
-					return default(T);
-
-				//todo find a way to get value
-				return slot.GetValue<T>();
-			}
-
-			return inputSlot.GetValue<T>();
+			return GetSlotValue<T>(inputSlot);
 		}
 
 		public static bool ImplicitConversionExists(SerializedType from, SerializedType to)
@@ -232,8 +316,7 @@ namespace NodeEditor
 			GetInputSlots(slots);
 			foreach (var inputSlot in slots)
 			{
-				var edges = owner.GetEdges(inputSlot.slotReference);
-				foreach (var edge in edges)
+				foreach (var edge in owner.GetEdges(inputSlot.slotReference))
 				{
 					var fromSocketRef = edge.outputSlot;
 					var outputNode = owner.GetNodeFromGuid(fromSocketRef.nodeGuid);
@@ -253,15 +336,17 @@ namespace NodeEditor
 			GetInputSlots(s_TempSlots);
 			foreach (var inputSlot in s_TempSlots)
 			{
+				s_TempEdges.Clear();
+				owner.GetEdges(inputSlot.slotReference,s_TempEdges);
+
 				// if there is a connection
-				var edges = owner.GetEdges(inputSlot.slotReference).ToList();
-				if (!edges.Any())
+				if (!s_TempEdges.Any())
 				{
 					continue;
 				}
 
 				// get the output details
-				var outputSlotRef = edges[0].outputSlot;
+				var outputSlotRef = s_TempEdges[0].outputSlot;
 				var outputNode = owner.GetNodeFromGuid(outputSlotRef.nodeGuid);
 				if (outputNode == null)
 					continue;
@@ -362,11 +447,23 @@ namespace NodeEditor
 			if(slot == null) throw new ArgumentNullException("slot");
 
 			// this will remove the old slot and add a new one
-			m_Slots.RemoveAll(x => x.id == slot.id);
-			m_Slots.Add(slot);
+			if (m_Slots.Remove(slot.id))
+			{
+				if(slot is IDisposable) ((IDisposable)slot).Dispose();
+			}
+			m_Slots.Add(slot.id, slot);
 			slot.owner = this;
 
 			Dirty(ModificationScope.Topological);
+		}
+
+		public void RemoveSlotsNameNotMatching(IEnumerable<int> index)
+		{
+			var keys = m_Slots.Keys.Except(index).ToArray();
+			foreach (var key in keys)
+			{
+				m_Slots.Remove(key);
+			}
 		}
 
 		public void RemoveSlot(int slotId)
@@ -376,28 +473,19 @@ namespace NodeEditor
 			// but before added to graph
 			if (owner != null)
 			{
-				var edges = owner.GetEdges(GetSlotReference(slotId));
-
-				foreach (var edge in edges.ToArray())
+				foreach (var edge in owner.GetEdges(GetSlotReference(slotId)))
 					owner.RemoveEdge(edge);
 			}
 
+			ISlot slot;
+			if (m_Slots.TryGetValue(slotId,out slot))
+			{
+				if(slot is IDisposable) ((IDisposable)slot).Dispose();
+			}
 			//remove slots
-			m_Slots.RemoveAll(x => x.id == slotId);
+			m_Slots.Remove(slotId);
 
 			Dirty(ModificationScope.Topological);
-		}
-
-		public void RemoveSlotsNameNotMatching(IEnumerable<int> slotIds, bool supressWarnings = false)
-		{
-			var invalidSlots = m_Slots.Select(x => x.id).Except(slotIds);
-
-			foreach (var invalidSlot in invalidSlots.ToArray())
-			{
-				if (!supressWarnings)
-					Debug.LogWarningFormat("Removing Invalid Slot: {0}", invalidSlot);
-				RemoveSlot(invalidSlot);
-			}
 		}
 
 		public SlotReference GetSlotReference(int slotId)
@@ -408,12 +496,12 @@ namespace NodeEditor
 			return new SlotReference(guid, slotId);
 		}
 
-		public T FindSlot<T>(int slotId) where T : ISlot
+		public T FindSlot<T>(int slotId) where T : ISlot 
 		{
-			foreach (var slot in m_Slots)
+			ISlot slot;
+			if (m_Slots.TryGetValue(slotId, out slot) && slot is T)
 			{
-				if (slot.id == slotId && slot is T)
-					return (T) slot;
+				return (T)slot;
 			}
 
 			return default(T);
@@ -421,35 +509,114 @@ namespace NodeEditor
 
 		public T FindInputSlot<T>(int slotId) where T : ISlot
 		{
-			foreach (var slot in m_Slots)
+			ISlot slot;
+			if (m_Slots.TryGetValue(slotId, out slot) && slot.isInputSlot && slot is T)
 			{
-				if (slot.isInputSlot && slot.id == slotId && slot is T)
-					return (T) slot;
+				return (T)slot;
 			}
 
 			return default(T);
+		}
+
+		public IHasValue<T> FindValueOutputSlot<T>(int slotId)
+		{
+			ISlot slot;
+			if (m_Slots.TryGetValue(slotId, out slot) && slot.isOutputSlot)
+			{
+				return slot as IHasValue<T>;
+			}
+
+			return null;
 		}
 
 		public T FindOutputSlot<T>(int slotId) where T : ISlot
 		{
-			foreach (var slot in m_Slots)
+			ISlot slot;
+			if (m_Slots.TryGetValue(slotId, out slot) && slot.isOutputSlot && slot is T)
 			{
-				if (slot.isOutputSlot && slot.id == slotId && slot is T)
-					return (T) slot;
+				return (T)slot;
 			}
 
 			return default(T);
 		}
 
+		public virtual int CompareTo(INode other)
+		{
+			return m_Priority.CompareTo(other.priority);
+		}
+
+		#region Slot Creation Helpers
+
+		public T CreateInputSlot<T>(string displayName) where T : NodeSlot, new()
+		{
+			return CreateSlot<T>(displayName, SlotType.Input);
+		}
+
+		public T CreateInputSlot<T>(string idName,string displayName) where T : NodeSlot, new()
+		{
+			return CreateSlot<T>(idName, displayName, SlotType.Input);
+		}
+
+		public T CreateInputSlot<T>(int id, string displayName) where T : NodeSlot, new()
+		{
+			return CreateSlot<T>(id, displayName, SlotType.Input);
+		}
+
+		public T CreateOutputSlot<T>(string displayName) where T : NodeSlot, new()
+		{
+			return CreateSlot<T>(displayName, SlotType.Output);
+		}
+
+		public T CreateOutputSlot<T>(string idName, string displayName) where T : NodeSlot, new()
+		{
+			return CreateSlot<T>(idName, displayName, SlotType.Output);
+		}
+
+		public T CreateOutputSlot<T>(int id, string displayName) where T : NodeSlot, new()
+		{
+			return CreateSlot<T>(id,displayName, SlotType.Output);
+		}
+
+		public T CreateSlot<T>(string displayName,SlotType type) where T : NodeSlot, new()
+		{
+			return CreateSlot<T>(displayName, displayName, type);
+		}
+
+		public T CreateSlot<T>(string idName, string displayName, SlotType type) where T : NodeSlot, new()
+		{
+			int id = idName.GetHashCode();
+			if(m_Slots.ContainsKey(id)) throw new Exception(string.Format("'{0}' has collision detected with {1}. Use a different name or manually assign id", idName,m_Slots[id].displayName));
+			return CreateSlot<T>(id,displayName,type);
+		}
+
+		#endregion
+
+		public T CreateSlot<T>(int id, string displayName, SlotType type) where T : NodeSlot, new()
+		{
+			var slot = new T()
+			{
+				id = id,
+				displayName = displayName,
+				slotType = type
+			};
+			AddSlot(slot);
+			return slot;
+		}
+
 		public virtual IEnumerable<ISlot> GetInputsWithNoConnection()
 		{
-			return this.GetInputSlots<ISlot>().Where(x => !owner.GetEdges(GetSlotReference(x.id)).Any());
+			return this.GetInputSlots<ISlot>().Where(x =>
+			{
+				s_TempEdges.Clear();
+				owner.GetEdges(GetSlotReference(x.id), s_TempEdges);
+				return !s_TempEdges.Any();
+			});
 		}
 
 		public virtual void OnBeforeSerialize()
 		{
 			m_GuidSerialized = m_Guid.ToString();
-			m_SerializableSlots = SerializationHelper.Serialize<ISlot>(m_Slots);
+			m_SerializableSlots = SerializationHelper.Serialize<ISlot>(m_Slots,false);
 		}
 
 		public virtual void OnAfterDeserialize()
@@ -459,9 +626,11 @@ namespace NodeEditor
 			else
 				m_Guid = Guid.NewGuid();
 
-			m_Slots = SerializationHelper.Deserialize<ISlot>(m_SerializableSlots, GraphUtil.GetLegacyTypeRemapping());
+			if(m_Slots == null) m_Slots = new Dictionary<int, ISlot>();
+			SerializationHelper.Deserialize(m_Slots,m_SerializableSlots, GraphUtil.GetLegacyTypeRemapping());
+
 			m_SerializableSlots = null;
-			foreach (var s in m_Slots)
+			foreach (var s in m_Slots.Values)
 				s.owner = this;
 			UpdateNodeAfterDeserialization();
 		}
@@ -473,11 +642,37 @@ namespace NodeEditor
 		public bool IsSlotConnected(int slotId)
 		{
 			var slot = FindSlot<ISlot>(slotId);
-			return slot != null && owner.GetEdges(slot.slotReference).Any();
+			if (slot == null) return false;
+			s_TempEdges.Clear();
+			owner.GetEdges(slot.slotReference, s_TempEdges);
+			return s_TempEdges.Any();
 		}
 
 		public virtual void GetSourceAssetDependencies(List<string> paths)
 		{
+		}
+
+		public virtual void SetOwner(IGraph graph)
+		{
+			m_Owner = graph;
+		}
+
+		public virtual void Dispose()
+		{
+			foreach (var disposable in m_Slots.OfType<IDisposable>())
+			{
+				disposable.Dispose();
+			}
+		}
+
+		public virtual void OnAdd()
+		{
+
+		}
+
+		public virtual void OnRemove()
+		{
+
 		}
 	}
 }

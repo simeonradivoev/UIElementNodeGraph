@@ -4,25 +4,32 @@ namespace NodeEditor.Editor.Tests
 {
 	public class TestSlot : NodeSlot
 	{
+		private SerializedType m_ValueType;
+
 		public TestSlot()
 		{
 		}
 
-		public TestSlot(int slotId, string displayName, Type valueType, SlotType slotType, bool hidden = false) : base(slotId, displayName, valueType, slotType, hidden)
+		public TestSlot(SerializedType mValueType,SlotType type,int id)
 		{
+			m_ValueType = mValueType;
+			slotType = type;
+			this.id = id;
 		}
 
-		public TestSlot(int slotId, string displayName, Type valueType, SlotType slotType, int priority, bool hidden = false) : base(slotId, displayName, valueType, slotType, priority, hidden)
+		public TestSlot SetValueType(Type type)
 		{
+			m_ValueType = type;
+			return this;
+		}
+
+		public override SerializedType valueType
+		{
+			get { return m_ValueType; }
 		}
 
 		public override void CopyValuesFrom(NodeSlot foundSlot)
 		{
-		}
-
-		public override T GetValue<T>()
-		{
-			return default(T);
 		}
 	}
 }

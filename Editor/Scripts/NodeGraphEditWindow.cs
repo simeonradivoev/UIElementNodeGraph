@@ -2,13 +2,13 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using NodeEditor.Scripts.Views;
+using NodeEditor.Editor.Scripts.Views;
 using UnityEditor;
 using UnityEditor.Experimental.UIElements;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
 
-namespace NodeEditor.Scripts
+namespace NodeEditor.Editor.Scripts
 {
 	public class NodeGraphEditWindow : EditorWindow
 	{
@@ -16,7 +16,7 @@ namespace NodeEditor.Scripts
 		string m_Selected;
 
 		[SerializeField]
-		GraphObject m_GraphObject;
+		GraphObjectBase m_GraphObject;
 
 		[NonSerialized]
 		bool m_HasError;
@@ -44,12 +44,12 @@ namespace NodeEditor.Scripts
 			}
 		}
 
-		GraphObject graphObject
+		GraphObjectBase graphObject
 		{
 			get { return m_GraphObject; }
 			set
 			{
-				if (m_GraphObject != null)
+				if (m_GraphObject is TmpGraphObject)
 					DestroyImmediate(m_GraphObject);
 				m_GraphObject = value;
 			}
@@ -84,7 +84,7 @@ namespace NodeEditor.Scripts
 				if (graphObject.isDirty && EditorUtility.DisplayDialog("Shader Graph Has Been Modified", "Do you want to save the changes you made in the shader graph?\n" + nameOfFile + "\n\nYour changes will be lost if you don't save them.", "Save", "Don't Save"))
 					UpdateAsset();
 				Undo.ClearUndo(graphObject);
-				DestroyImmediate(graphObject);
+				if(graphObject is TmpGraphObject) DestroyImmediate(graphObject);
 			}
 
 			graphEditorView = null;
@@ -108,10 +108,15 @@ namespace NodeEditor.Scripts
 				if (string.IsNullOrEmpty(path) || graphObject == null)
 					return;
 
-				if (m_GraphObject.graph.GetType() == typeof(NodeGraph))
+				if (graphObject is TmpGraphObject && m_GraphObject.graph.GetType() == typeof(NodeGraph))
 					UpdateNodeGraphOnDisk(path);
+				else
+				{
+					EditorUtility.SetDirty(graphObject);
+					AssetDatabase.SaveAssets();
+				}
 
-				graphObject.isDirty = false;
+				graphObject.SetDirty(false);
 				var windows = Resources.FindObjectsOfTypeAll<NodeGraphEditWindow>();
 				foreach (var materialGraphEditWindow in windows)
 				{
@@ -134,27 +139,37 @@ namespace NodeEditor.Scripts
 				if (selectedGuid == assetGuid)
 					return;
 
-				var path = AssetDatabase.GetAssetPath(asset);
-				var extension = Path.GetExtension(path);
 				Type graphType;
-				switch (extension)
+				if (asset is GraphObjectBase)
 				{
-					case ".NodeGraph":
-						graphType = typeof(NodeGraph);
-						break;
-					default:
-						return;
+					if(asset is TmpGraphObject) Debug.LogError("TmpGraphObject is only used in editor");
+					graphObject = (GraphObjectBase)asset;
+					graphType = typeof(NodeGraph);
+				}
+				else
+				{
+					var path = AssetDatabase.GetAssetPath(asset);
+					var extension = Path.GetExtension(path);
+
+					switch (extension)
+					{
+						case ".NodeGraph":
+							graphType = typeof(NodeGraph);
+							break;
+						default:
+							return;
+					}
+
+					var textGraph = File.ReadAllText(path, Encoding.UTF8);
+					graphObject = CreateInstance<TmpGraphObject>();
+					graphObject.hideFlags = HideFlags.HideAndDontSave;
+					graphObject.graph = JsonUtility.FromJson(textGraph, graphType) as IGraph;
 				}
 
 				selectedGuid = assetGuid;
-
-				var textGraph = File.ReadAllText(path, Encoding.UTF8);
-				graphObject = CreateInstance<GraphObject>();
-				graphObject.hideFlags = HideFlags.HideAndDontSave;
-				graphObject.graph = JsonUtility.FromJson(textGraph, graphType) as IGraph ?? Activator.CreateInstance(graphType) as IGraph;
+				if (graphObject.graph == null) graphObject.graph = Activator.CreateInstance(graphType) as IGraph;
 				graphObject.graph.OnEnable();
 				graphObject.graph.ValidateGraph();
-
 				graphEditorView = new GraphEditorView(this, m_GraphObject.graph as AbstractNodeGraph)
 				{
 					persistenceKey = selectedGuid,
@@ -236,7 +251,6 @@ namespace NodeEditor.Scripts
 			File.WriteAllText(path, EditorJsonUtility.ToJson(graph, true));
 			AssetDatabase.ImportAsset(path);
 		}
-
 
 		private void Rebuild()
 		{

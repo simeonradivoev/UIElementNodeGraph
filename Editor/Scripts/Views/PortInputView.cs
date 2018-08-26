@@ -1,5 +1,4 @@
 using System;
-using NodeEditor.Scripts.Views.Slots;
 using UnityEditor.Experimental.UIElements.GraphView;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
@@ -17,7 +16,7 @@ namespace NodeEditor.Scripts.Views
         {
 	        get
 	        {
-		        return slot.valueType.Type.GetColor();
+		        return m_EdgeColor.value;
 	        }
         }
 
@@ -39,7 +38,7 @@ namespace NodeEditor.Scripts.Views
             ClearClassList();
             m_Slot = slot;
             m_SlotType = slot.valueType;
-            AddToClassList("type" + m_SlotType);
+            AddToClassList("type" + m_SlotType.Type.Name);
 
             m_EdgeControl = new EdgeControl
             {
@@ -55,11 +54,6 @@ namespace NodeEditor.Scripts.Views
                 m_Control = this.slot.InstantiateControl();
                 if (m_Control != null)
                     m_Container.Add(m_Control);
-                else if (ValueSlotControlView.IsValidType(slot.valueType))
-                {
-	                m_Control = new ValueSlotControlView(this.slot);
-	                m_Container.Add(m_Control);
-				}
 
 				var slotElement = new VisualElement { name = "slot" };
                 {
@@ -95,9 +89,9 @@ namespace NodeEditor.Scripts.Views
 
         void Recreate()
         {
-            RemoveFromClassList("type" + m_SlotType);
+            RemoveFromClassList("type" + m_SlotType.Type.Name);
             m_SlotType = slot.valueType;
-            AddToClassList("type" + m_SlotType);
+            AddToClassList("type" + m_SlotType.Type.Name);
             if (m_Control != null)
             {
                 var disposable = m_Control as IDisposable;

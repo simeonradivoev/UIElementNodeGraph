@@ -22,15 +22,9 @@ namespace NodeEditor
 			m_NodeGUIDSerialized = string.Empty;
 		}
 
-		public Guid nodeGuid
-		{
-			get { return m_NodeGUID; }
-		}
+		public Guid nodeGuid => m_NodeGUID;
 
-		public int slotId
-		{
-			get { return m_SlotId; }
-		}
+		public int slotId => m_SlotId;
 
 		public void OnBeforeSerialize()
 		{
@@ -44,15 +38,12 @@ namespace NodeEditor
 
 		public bool Equals(SlotReference other)
 		{
-			if (ReferenceEquals(null, other)) return false;
-			if (ReferenceEquals(this, other)) return true;
 			return m_SlotId == other.m_SlotId && m_NodeGUID.Equals(other.m_NodeGUID);
 		}
 
 		public override bool Equals(object obj)
 		{
 			if (ReferenceEquals(null, obj)) return false;
-			if (ReferenceEquals(this, obj)) return true;
 			if (obj.GetType() != this.GetType()) return false;
 			return Equals((SlotReference)obj);
 		}

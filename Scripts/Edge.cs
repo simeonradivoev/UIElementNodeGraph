@@ -20,15 +20,9 @@ namespace NodeEditor
 			m_InputSlot = inputSlot;
 		}
 
-		public SlotReference outputSlot
-		{
-			get { return m_OutputSlot; }
-		}
+		public SlotReference outputSlot => m_OutputSlot;
 
-		public SlotReference inputSlot
-		{
-			get { return m_InputSlot; }
-		}
+		public SlotReference inputSlot => m_InputSlot;
 
 		protected bool Equals(Edge other)
 		{

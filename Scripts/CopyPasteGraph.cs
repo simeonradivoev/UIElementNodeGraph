@@ -90,29 +90,17 @@ namespace NodeEditor
 			return m_Nodes.OfType<T>();
 		}
 
-		public IEnumerable<IEdge> edges
-		{
-			get { return m_Edges; }
-		}
+		public IEnumerable<IEdge> edges => m_Edges;
 
-		public IEnumerable<INodeProperty> properties
-		{
-			get { return m_Properties; }
-		}
+		public IEnumerable<INodeProperty> properties => m_Properties;
 
-		public IEnumerable<INodeProperty> metaProperties
-		{
-			get { return m_MetaProperties; }
-		}
+		public IEnumerable<INodeProperty> metaProperties => m_MetaProperties;
 
-		public Guid sourceGraphGuid
-		{
-			get { return m_SourceGraphGuid.guid; }
-		}
+		public Guid sourceGraphGuid => m_SourceGraphGuid.guid;
 
 		public void OnBeforeSerialize()
 		{
-			m_SerializeableSourceGraphGuid = SerializationHelper.Serialize(m_SourceGraphGuid);
+			m_SerializeableSourceGraphGuid = SerializationHelper.Serialize(m_SourceGraphGuid,false);
 			m_SerializableNodes = SerializationHelper.Serialize<INode>(m_Nodes);
 			m_SerializableEdges = SerializationHelper.Serialize<IEdge>(m_Edges);
 			m_SerilaizeableProperties = SerializationHelper.Serialize<INodeProperty>(m_Properties);

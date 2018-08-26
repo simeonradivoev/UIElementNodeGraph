@@ -12,5 +12,6 @@ namespace NodeEditor
 		SlotReference slotReference { get; }
 		INode owner { get; set; }
 		bool hidden { get; set; }
+		bool allowMultipleConnections { get; }
 	}
 }

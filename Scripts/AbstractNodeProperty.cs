@@ -12,6 +12,9 @@ namespace NodeEditor
 		private string m_Name;
 
 		[SerializeField]
+		private string m_Reference;
+
+		[SerializeField]
 		private bool m_Exposed = true;
 
 		[SerializeField]
@@ -21,6 +24,12 @@ namespace NodeEditor
 		{
 			get { return m_Value; }
 			set { m_Value = value; }
+		}
+
+		public string reference
+		{
+			get { return m_Reference; }
+			set { m_Reference = value; }
 		}
 
 		public string displayName
@@ -61,10 +70,7 @@ namespace NodeEditor
 
 		public abstract SerializedType propertyType { get; }
 
-		public Guid guid
-		{
-			get { return m_Guid.guid; }
-		}
+		public Guid guid => m_Guid.guid;
 
 		public bool exposed
 		{

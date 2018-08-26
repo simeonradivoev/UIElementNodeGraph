@@ -25,7 +25,7 @@ namespace NodeEditor.Editor.Tests
 		public void TestCanCreateMaterialGraph()
 		{
 			TestableMGraph graph = new TestableMGraph();
-			Assert.AreEqual(0, graph.edges.Count());
+			Assert.AreEqual(0, graph.GetEdges().Count);
 			Assert.AreEqual(0, graph.GetNodes<AbstractNode>().Count());
 		}
 
@@ -36,7 +36,7 @@ namespace NodeEditor.Editor.Tests
 
 			var node = new TestableMNode();
 			graph.AddNode(node);
-			Assert.AreEqual(0, graph.edges.Count());
+			Assert.AreEqual(0, graph.GetEdges().Count);
 			Assert.AreEqual(1, graph.GetNodes<AbstractNode>().Count());
 		}
 
@@ -47,7 +47,7 @@ namespace NodeEditor.Editor.Tests
 
 			var node = new TestableMNode();
 			graph.AddNode(node);
-			Assert.AreEqual(0, graph.edges.Count());
+			Assert.AreEqual(0, graph.GetEdges().Count);
 			Assert.AreEqual(1, graph.GetNodes<AbstractNode>().Count());
 
 			Assert.AreEqual(node, graph.GetNodeFromGuid(node.guid));

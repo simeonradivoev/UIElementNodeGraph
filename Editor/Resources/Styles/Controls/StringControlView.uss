@@ -1,0 +1,14 @@
+ValueSlotControlView {
+    flex-direction: row;
+    padding-left: 8;
+    padding-right: 8;
+    padding-top: 4;
+    padding-bottom: 4;
+}
+
+ValueSlotControlView > TextField {
+    margin-left: 0;
+    margin-right: 0;
+    min-width: 86;
+    flex-grow: 1;
+}

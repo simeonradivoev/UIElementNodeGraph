@@ -13,7 +13,7 @@ namespace NodeEditor.Scripts
     {
         readonly AbstractNodeGraph m_Graph;
 
-        Toggle m_ExposedToogle;
+        TextField m_Reference;
 
         IManipulator m_ResetReferenceMenu;
 
@@ -22,14 +22,14 @@ namespace NodeEditor.Scripts
             AddStyleSheetPath("Styles/NodeGraphBlackboard");
             m_Graph = graph;
 
-            m_ExposedToogle = new Toggle();
-            m_ExposedToogle.OnValueChanged(evt =>
+	        m_Reference = new TextField();
+	        m_Reference.OnValueChanged(evt =>
             {
-                property.exposed = evt.newValue;
+                property.reference = evt.newValue;
                 DirtyNodes(ModificationScope.Graph);
             });
-            m_ExposedToogle.value = property.exposed;
-            AddRow("Exposed", m_ExposedToogle);
+	        m_Reference.value = property.reference;
+            AddRow("Reference", m_Reference);
 
             if (property is ValueProperty<float>)
             {

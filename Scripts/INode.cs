@@ -13,16 +13,18 @@ namespace NodeEditor
 
 	public delegate void OnNodeModified(INode node, ModificationScope scope);
 
-	public interface INode
+	public interface INode : IComparable<INode>
 	{
 		void RegisterCallback(OnNodeModified callback);
 		void UnregisterCallback(OnNodeModified callback);
 		void Dirty(ModificationScope scope);
-		IGraph owner { get; set; }
+		IGraph owner { get;}
+		void SetOwner(IGraph graph);
 		Guid guid { get; }
 		Identifier tempId { get; set; }
 		Guid RewriteGuid();
 		string name { get; set; }
+		int priority { get; set; }
 		bool canDeleteNode { get; }
 		void GetInputSlots<T>(List<T> foundSlots) where T : ISlot;
 		void GetOutputSlots<T>(List<T> foundSlots) where T : ISlot;

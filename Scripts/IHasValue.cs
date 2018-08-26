@@ -1,6 +1,13 @@
-﻿namespace NodeEditor
+﻿using System.Collections.Generic;
+
+namespace NodeEditor
 {
-	public interface IHasValue<T>
+	public interface IHasValue
+	{
+		object value { get; }
+	}
+
+	public interface IHasValue<out T>
 	{
 		T value { get; }
 	}

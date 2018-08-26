@@ -1,42 +1,35 @@
 ﻿using System.Collections.Generic;
-using UnityEngine;
+using NodeEditor.Controls;
 
 namespace NodeEditor.Nodes
 {
 	public class ValueNode<T> : AbstractNode, IPropertyFromNode, IHasValue<T>,IValueSetter<T>
 	{
-		public const int OutputSlotId = 0;
 		private const string kOutputSlotName = "Out";
+
+		private ValueSlot<T> m_Output;
 
 		public ValueNode()
 		{
+			m_Output = CreateOutputSlot<ValueSlot<T>>(kOutputSlotName);
 			name = typeof(T).Name;
 			UpdateNodeAfterDeserialization();
 		}
 
-		[SerializeField]
-		T m_Value;
-
-		[Control]
+		[DefaultControl]
 		public T value
 		{
-			get { return m_Value; }
+			get { return m_Output.value; }
 			set
 			{
-				m_Value = value;
+				m_Output.value = value;
 				Dirty(ModificationScope.Node);
 			}
 		}
 
 		public void SetValue(T val)
 		{
-			m_Value = val;
-		}
-
-		public sealed override void UpdateNodeAfterDeserialization()
-		{
-			AddSlot(new ValueSlot<T>(OutputSlotId, kOutputSlotName, SlotType.Output));
-			RemoveSlotsNameNotMatching(new[] { OutputSlotId });
+			m_Output.value = val;
 		}
 
 		public override void CollectPreviewMaterialProperties(List<PreviewProperty> properties)
@@ -53,6 +46,6 @@ namespace NodeEditor.Nodes
 			return new ValueProperty<T> { value = value };
 		}
 
-		public int outputSlotId { get { return OutputSlotId; } }
+		public int outputSlotId => 0;
 	}
 }

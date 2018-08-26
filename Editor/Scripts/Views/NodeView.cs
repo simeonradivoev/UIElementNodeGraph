@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using NodeEditor.Editor.Controls;
+using NodeEditor.Controls;
 using NodeEditor.Util;
+using UnityEditor.Experimental.UIElements;
 using UnityEditor.Experimental.UIElements.GraphView;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
@@ -14,7 +15,9 @@ namespace NodeEditor.Scripts.Views
 {
 	public class NodeView : Node
 	{
-		private static Dictionary<Type,Type> ControlElementTypes;
+		TextField m_TitleField;
+		VisualElement m_TitleLabel;
+		VisualElement m_PriorityField;
 		VisualElement m_ControlItems;
 		VisualElement m_ControlsDivider;
 		IEdgeConnectorListener m_ConnectorListener;
@@ -24,6 +27,7 @@ namespace NodeEditor.Scripts.Views
 		VisualElement m_SettingsButton;
 		VisualElement m_Settings;
 		VisualElement m_NodeSettingsView;
+		private bool m_EditPathCancelled;
 
 
 		public void Initialize(AbstractNode inNode, IEdgeConnectorListener connectorListener)
@@ -39,6 +43,22 @@ namespace NodeEditor.Scripts.Views
 			m_ConnectorListener = connectorListener;
 			node = inNode;
 			persistenceKey = node.guid.ToString();
+			var priorityField = new IntegerField() {value = node.priority,name = "priority-field",visible = CalculatePriorityVisibility(node)};
+			priorityField.OnValueChanged(e => node.priority = e.newValue);
+			titleContainer.Insert(1,priorityField);
+			m_PriorityField = priorityField;
+			m_TitleLabel = titleContainer.First(e => e.name == "title-label");
+			m_TitleLabel.RegisterCallback<MouseDownEvent>(OnTitleLabelMouseDown);
+			m_TitleField = new TextField
+			{
+				name = "title-field",
+				value = inNode.name,
+				visible = false
+			};
+			m_TitleField.style.positionType = PositionType.Absolute;
+			m_TitleField.RegisterCallback<FocusOutEvent>(e => { OnEditTitleTextFinished(); });
+			m_TitleField.RegisterCallback<KeyDownEvent>(OnTitleTextFieldKeyPressed);
+			titleContainer.shadow.Add(m_TitleField);
 			UpdateTitle();
 
 			// Add controls container
@@ -50,30 +70,19 @@ namespace NodeEditor.Scripts.Views
 				m_ControlItems = new VisualElement { name = "items" };
 				controlsContainer.Add(m_ControlItems);
 
-				if (ControlElementTypes == null)
-				{
-					ControlElementTypes = new Dictionary<Type, Type>();
-					foreach (var type in AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypesOrNothing()).Where(t => typeof(VisualElement).IsAssignableFrom(t)))
-					{
-						var controlElementAttributes = type.GetCustomAttributes(typeof(ControlElementAttribute), true);
-						if (controlElementAttributes.Length > 0)
-						{
-							var at = (ControlElementAttribute)controlElementAttributes[0];
-							ControlElementTypes.Add(at.ControlType, type);
-						}
-					}
-				}
-
 				// Instantiate control views from node
 				foreach (var propertyInfo in node.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
 				foreach (IControlAttribute attribute in propertyInfo.GetCustomAttributes(typeof(IControlAttribute), false))
 				{
-					var attributeType = attribute.GetType();
-					Type elementType;
-					if (ControlElementTypes.TryGetValue(attributeType, out elementType))
-					{
-						m_ControlItems.Add((VisualElement)Activator.CreateInstance(elementType, attribute, node,propertyInfo));
-					}
+					var control = attribute.InstantiateControl(node, new ReflectionProperty(propertyInfo));
+					if(control != null) m_ControlItems.Add(control);
+				}
+
+				foreach (var fieldInfo in node.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+				foreach (IControlAttribute attribute in fieldInfo.GetCustomAttributes(typeof(IControlAttribute), false))
+				{
+					var control = attribute.InstantiateControl(node, new ReflectionProperty(fieldInfo));
+					if (control != null) m_ControlItems.Add(control);
 				}
 			}
 			if (m_ControlItems.childCount > 0)
@@ -139,6 +148,72 @@ namespace NodeEditor.Scripts.Views
 
 				RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
 			}
+		}
+
+		private void OnTitleLabelMouseDown(MouseDownEvent evt)
+		{
+			if (evt.clickCount == 2 && evt.button == (int)MouseButton.LeftMouse)
+			{
+				StartEditingName();
+				evt.PreventDefault();
+			}
+		}
+
+		private void StartEditingName()
+		{
+			m_TitleField.visible = true;
+
+			m_TitleField.value = node.name;
+			m_TitleField.style.positionType = PositionType.Absolute;
+			m_TitleField.style.positionLeft = titleContainer.layout.x;
+			m_TitleField.style.positionTop = titleContainer.layout.y;
+			m_TitleField.style.width = titleContainer.layout.width;
+			m_TitleField.style.height = titleContainer.layout.height;
+			m_TitleField.style.fontSize = m_TitleLabel.style.fontSize;
+			m_TitleField.style.marginLeft = 0;
+			m_TitleField.style.marginRight = 0;
+			m_TitleField.style.marginTop = 0;
+			m_TitleField.style.marginBottom = 0;
+			m_TitleField.style.textAlignment = TextAnchor.MiddleLeft;
+
+			m_TitleLabel.visible = false;
+
+			m_TitleField.Focus();
+			m_TitleField.SelectAll();
+		}
+
+		void OnTitleTextFieldKeyPressed(KeyDownEvent evt)
+		{
+			switch (evt.keyCode)
+			{
+				case KeyCode.Escape:
+					m_EditPathCancelled = true;
+					m_TitleField.Blur();
+					break;
+				case KeyCode.Return:
+				case KeyCode.KeypadEnter:
+					m_TitleField.Blur();
+					break;
+				default:
+					break;
+			}
+		}
+
+		void OnEditTitleTextFinished()
+		{
+			m_TitleLabel.visible = true;
+			m_TitleField.visible = false;
+
+			var newPath = m_TitleField.text;
+			/*if (!m_EditPathCancelled && (newPath != node.name.text))
+			{
+				newPath = SanitizePath(newPath);
+			}*/
+
+			node.name = newPath;
+			node.Dirty(ModificationScope.Node);
+			UpdateTitle();
+			m_EditPathCancelled = false;
 		}
 
 		void OnGeometryChanged(GeometryChangedEvent evt)
@@ -281,6 +356,10 @@ namespace NodeEditor.Scripts.Views
 				if (outputContainer.childCount > 0)
 					outputContainer.Sort((x, y) => slots.IndexOf(((NodePort)x).slot) - slots.IndexOf(((NodePort)y).slot));
 			}
+			else
+			{
+				m_PriorityField.visible = CalculatePriorityVisibility(node);
+			}
 
 			RefreshExpandedState(); //This should not be needed. GraphView needs to improve the extension api here
 			UpdatePortInputs();
@@ -292,6 +371,16 @@ namespace NodeEditor.Scripts.Views
 				if (listener != null)
 					listener.OnNodeModified(scope);
 			}
+		}
+
+		private bool CalculatePriorityVisibility(INode node)
+		{
+			var slots = ListPool<ISlot>.Get();
+			var edges = ListPool<IEdge>.Get();
+			node.GetOutputSlots(slots);
+			foreach (var slot in slots)
+				node.owner.GetEdges(node.GetSlotReference(slot.id), edges);
+			return edges.Any(e => node.owner.GetNodeFromGuid(e.inputSlot.nodeGuid).FindSlot<ISlot>(e.inputSlot.slotId).allowMultipleConnections);
 		}
 
 		void AddSlots(IEnumerable<NodeSlot> slots)

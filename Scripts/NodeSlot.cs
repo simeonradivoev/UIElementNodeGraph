@@ -17,45 +17,47 @@ namespace NodeEditor
 
 		[SerializeField] SlotType m_SlotType = SlotType.Input;
 
+		[SerializeField] bool m_AllowMultipleConnections = false;
+
 		[SerializeField] int m_Priority = int.MaxValue;
 
 		[SerializeField] bool m_Hidden;
 
-		[SerializeField] SerializedType m_ValueType;
+		[NonSerialized] private List<ISlot> m_SlotConnectionCache = new List<ISlot>();
 
 		bool m_HasError;
-
-		protected NodeSlot()
-		{
-		}
-
-		protected NodeSlot(int slotId, string displayName, Type valueType, SlotType slotType, bool hidden = false)
-		{
-			m_Id = slotId;
-			m_DisplayName = displayName;
-			m_SlotType = slotType;
-			m_Hidden = hidden;
-			m_ValueType = new SerializedType(valueType);
-		}
-
-		protected NodeSlot(int slotId, string displayName, Type valueType, SlotType slotType, int priority, bool hidden = false)
-		{
-			m_Id = slotId;
-			m_DisplayName = displayName;
-			m_SlotType = slotType;
-			m_Priority = priority;
-			m_Hidden = hidden;
-			m_ValueType = new SerializedType(valueType);
-		}
 
 		public virtual VisualElement InstantiateControl()
 		{
 			return null;
 		}
 
+		public NodeSlot SetDisplayName(string name)
+		{
+			m_DisplayName = name;
+			return this;
+		}
+
+		public ReadOnlyList<ISlot> GetSlotConnectionCache()
+		{
+			return new ReadOnlyList<ISlot>(m_SlotConnectionCache);
+		}
+
+		internal void ClearConnectionCache()
+		{
+			m_SlotConnectionCache.Clear();
+		}
+
+		internal void AddConnectionToCache(ISlot slot)
+		{
+			if(Equals(slot)) throw new Exception("Cannot add itself to cache");
+			if(m_SlotConnectionCache.Contains(slot)) throw new Exception("Slot is already present");
+			m_SlotConnectionCache.Add(slot);
+		}
+
 		public virtual string displayName
 		{
-			get { return m_DisplayName + string.Format(" ({0})", m_ValueType.Type.Name); }
+			get { return m_DisplayName + string.Format(" ({0})", valueType.Type.Name); }
 			set { m_DisplayName = value; }
 		}
 
@@ -64,12 +66,21 @@ namespace NodeEditor
 			return m_DisplayName;
 		}
 
-		public SlotReference slotReference
-		{
-			get { return new SlotReference(owner.guid, m_Id); }
-		}
+		public SlotReference slotReference => new SlotReference(owner.guid, m_Id);
 
 		public INode owner { get; set; }
+
+		public NodeSlot SetAllowMultipleConnections(bool allow)
+		{
+			m_AllowMultipleConnections = allow;
+			return this;
+		}
+
+		public bool allowMultipleConnections
+		{
+			get { return m_AllowMultipleConnections; }
+			set { m_AllowMultipleConnections = value; }
+		}
 
 		public bool hidden
 		{
@@ -80,6 +91,13 @@ namespace NodeEditor
 		public int id
 		{
 			get { return m_Id; }
+			protected internal set { m_Id = value; }
+		}
+
+		public NodeSlot SetPriority(int priority)
+		{
+			m_Priority = priority;
+			return this;
 		}
 
 		public int priority
@@ -88,19 +106,14 @@ namespace NodeEditor
 			set { m_Priority = value; }
 		}
 
-		public bool isInputSlot
-		{
-			get { return m_SlotType == SlotType.Input; }
-		}
+		public bool isInputSlot => m_SlotType == SlotType.Input;
 
-		public bool isOutputSlot
-		{
-			get { return m_SlotType == SlotType.Output; }
-		}
+		public bool isOutputSlot => m_SlotType == SlotType.Output;
 
 		public SlotType slotType
 		{
 			get { return m_SlotType; }
+			protected internal set { m_SlotType = value; }
 		}
 
 		public bool isConnected
@@ -123,10 +136,10 @@ namespace NodeEditor
 			set { m_HasError = value; }
 		}
 
-		public SerializedType valueType
+
+		public abstract SerializedType valueType
 		{
-			get { return m_ValueType; }
-			set { m_ValueType = value; }
+			get;
 		}
 
 		public bool IsCompatibleWith(NodeSlot otherSlot)
@@ -135,7 +148,7 @@ namespace NodeEditor
 			       && otherSlot.owner != owner
 			       && otherSlot.isInputSlot != isInputSlot
 			       && otherSlot.isOutputSlot != isOutputSlot
-			       && otherSlot.valueType == valueType;
+			       && (otherSlot.valueType == valueType || otherSlot.valueType.Type.IsAssignableFrom(valueType));
 		}
 
 		public virtual void GetPreviewProperties(List<PreviewProperty> properties)
@@ -144,8 +157,6 @@ namespace NodeEditor
 		}
 
 		public abstract void CopyValuesFrom(NodeSlot foundSlot);
-
-		public abstract T GetValue<T>();
 
 		bool Equals(NodeSlot other)
 		{

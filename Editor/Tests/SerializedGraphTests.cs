@@ -22,7 +22,7 @@ namespace NodeEditor.Editor.Tests
         {
             var graph = new TestNodeGraph();
 
-            Assert.AreEqual(0, graph.edges.Count());
+            Assert.AreEqual(0, graph.GetEdges().Count);
             Assert.AreEqual(0, graph.GetNodes<INode>().Count());
         }
 
@@ -113,13 +113,13 @@ namespace NodeEditor.Editor.Tests
 
             public TestableNode()
             {
-                AddSlot(new TestSlot(Input0, "Input",typeof(Vector3), SlotType.Input));
-                AddSlot(new TestSlot(Input1, "Input", typeof(Vector3), SlotType.Input));
-                AddSlot(new TestSlot(Input2, "Input", typeof(Vector3), SlotType.Input));
+	            CreateInputSlot<TestSlot>(Input0,"Input").SetValueType(typeof(Vector3));
+	            CreateInputSlot<TestSlot>(Input1,"Input").SetValueType(typeof(Vector3));
+	            CreateInputSlot<TestSlot>(Input2,"Input").SetValueType(typeof(Vector3));
 
-                AddSlot(new TestSlot(Output0, "Output", typeof(Vector3), SlotType.Output));
-                AddSlot(new TestSlot(Output1, "Output", typeof(Vector3), SlotType.Output));
-                AddSlot(new TestSlot(Output2, "Output", typeof(Vector3), SlotType.Output));
+	            CreateOutputSlot<TestSlot>(Output0,"Output").SetValueType(typeof(Vector3));
+	            CreateOutputSlot<TestSlot>(Output1,"Output").SetValueType(typeof(Vector3));
+	            CreateOutputSlot<TestSlot>(Output2,"Output").SetValueType(typeof(Vector3));
             }
         }
 
@@ -135,16 +135,16 @@ namespace NodeEditor.Editor.Tests
 
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
             var createdEdge = graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
 
-            var edge = graph.edges.FirstOrDefault();
+            var edge = graph.GetEdges().FirstOrDefault();
 
             Assert.AreEqual(createdEdge, edge);
 
             graph.RemoveNode(outputNode);
 
             Assert.AreEqual(1, graph.GetNodes<INode>().Count());
-            Assert.AreEqual(0, graph.edges.Count());
+            Assert.AreEqual(0, graph.GetEdges().Count);
             Assert.AreEqual(inputNode, graph.GetNodes<INode>().FirstOrDefault());
         }
 
@@ -205,17 +205,17 @@ namespace NodeEditor.Editor.Tests
         {
             var graph = new TestNodeGraph();
             var node = new TestNode();
-            node.AddSlot(new TestSlot(0, "output", typeof(Vector3), SlotType.Output));
-            node.AddSlot(new TestSlot(1, "input", typeof(Vector3), SlotType.Input));
+			var output = node.CreateOutputSlot<TestSlot>("output").SetValueType(typeof(Vector3));
+	        var input = node.CreateInputSlot<TestSlot>("input").SetValueType(typeof(Vector3));
             node.name = "Test Node";
             graph.AddNode(node);
 
             Assert.AreEqual(1, graph.GetNodes<INode>().Count());
             var found = graph.GetNodes<INode>().FirstOrDefault();
             Assert.AreEqual(1, found.GetInputSlots<ISlot>().Count());
-            Assert.AreEqual(1, found.GetInputSlots<ISlot>().FirstOrDefault().id);
+            Assert.AreEqual(input.id, found.GetInputSlots<ISlot>().FirstOrDefault().id);
             Assert.AreEqual(1, found.GetOutputSlots<ISlot>().Count());
-            Assert.AreEqual(0, found.GetOutputSlots<ISlot>().FirstOrDefault().id);
+            Assert.AreEqual(output.id, found.GetOutputSlots<ISlot>().FirstOrDefault().id);
             Assert.AreEqual(2, found.GetSlots<ISlot>().Count());
         }
 
@@ -231,15 +231,15 @@ namespace NodeEditor.Editor.Tests
         {
             var graph = new TestNodeGraph();
             var node = new TestNode();
-            node.AddSlot(new TestSlot(0, "output", typeof(Vector3), SlotType.Output));
-            node.AddSlot(new TestSlot(1, "input", typeof(Vector3), SlotType.Input));
+	        var output = node.CreateOutputSlot<TestSlot>("output").SetValueType(typeof(Vector3));
+			var input = node.CreateInputSlot<TestSlot>("input").SetValueType(typeof(Vector3));
             graph.AddNode(node);
 
             Assert.AreEqual(2, node.GetSlots<ISlot>().Count());
             Assert.AreEqual(1, node.GetInputSlots<ISlot>().Count());
             Assert.AreEqual(1, node.GetOutputSlots<ISlot>().Count());
 
-            node.RemoveSlot(1);
+            node.RemoveSlot(input.id);
 
             Assert.AreEqual(1, node.GetSlots<ISlot>().Count());
             Assert.AreEqual(0, node.GetInputSlots<ISlot>().Count());
@@ -273,9 +273,11 @@ namespace NodeEditor.Editor.Tests
         {
             var graph = new TestNodeGraph();
             var node = new TestNode();
-            node.AddSlot(new TestSlot(0, "output", typeof(Vector3), SlotType.Output));
-            node.AddSlot(new TestSlot(0, "output", typeof(Vector3), SlotType.Output));
-            node.name = "Test Node";
+	        var slot0 = new TestSlot(typeof(Vector3),SlotType.Output,0);
+	        var slot1 = new TestSlot(typeof(Vector3), SlotType.Output, 0);
+			node.AddSlot(slot0);
+			node.AddSlot(slot1);
+			node.name = "Test Node";
             graph.AddNode(node);
 
             Assert.AreEqual(1, graph.GetNodes<INode>().Count());
@@ -290,8 +292,10 @@ namespace NodeEditor.Editor.Tests
         {
             var graph = new TestNodeGraph();
             var node = new TestNode();
-            node.AddSlot(new TestSlot(0, "output", typeof(Vector3), SlotType.Output));
-            node.AddSlot(new TestSlot(0, "output_updated", typeof(Vector3), SlotType.Output));
+			var slot0 = new TestSlot(typeof(Vector3),SlotType.Output,0).SetDisplayName("output");
+			var slot1 = new TestSlot(typeof(Vector3),SlotType.Output,0).SetDisplayName("output_updated");
+            node.AddSlot(slot0);
+			node.AddSlot(slot1);
             node.name = "Test Node";
             graph.AddNode(node);
 
@@ -310,8 +314,8 @@ namespace NodeEditor.Editor.Tests
         {
             var graph = new TestNodeGraph();
             var node = new TestNode();
-            node.AddSlot(new TestSlot(0, "output", typeof(Vector3), SlotType.Output, 0));
-            node.name = "Test Node";
+			node.CreateOutputSlot<TestSlot>("output").SetValueType(typeof(Vector3)).SetPriority(0);
+			node.name = "Test Node";
             graph.AddNode(node);
 
             Assert.AreEqual(1, graph.GetNodes<INode>().Count());
@@ -331,9 +335,11 @@ namespace NodeEditor.Editor.Tests
         {
             var graph = new TestNodeGraph();
             var node = new TestNode();
-            node.AddSlot(new TestSlot(0, "output", typeof(Vector3), SlotType.Output, 0));
-            node.AddSlot(new TestSlot(0, "output", typeof(Vector3), SlotType.Output, 5));
-            node.name = "Test Node";
+			var slot0 = new TestSlot(typeof(Vector3),SlotType.Output,0);
+			var slot1 = new TestSlot(typeof(Vector3),SlotType.Output,0).SetPriority(5);
+			node.AddSlot(slot0);
+			node.AddSlot(slot1);
+			node.name = "Test Node";
             graph.AddNode(node);
 
             Assert.AreEqual(1, graph.GetNodes<INode>().Count());
@@ -350,8 +356,8 @@ namespace NodeEditor.Editor.Tests
         public void TestCanUpdateSlotDisplayName()
         {
             var node = new TestNode();
-            node.AddSlot(new TestSlot(0, "output", typeof(Vector3), SlotType.Output));
-            node.name = "Test Node";
+			node.CreateOutputSlot<TestSlot>("output").SetValueType(typeof(Vector3));
+			node.name = "Test Node";
 
             Assert.AreEqual(0, node.GetInputSlots<ISlot>().Count());
             Assert.AreEqual(1, node.GetOutputSlots<ISlot>().Count());
@@ -406,9 +412,9 @@ namespace NodeEditor.Editor.Tests
 
 
             var createdEdge = graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
 
-            var edge = graph.edges.FirstOrDefault();
+            var edge = graph.GetEdges().FirstOrDefault();
 
             Assert.AreEqual(createdEdge, edge);
 
@@ -440,10 +446,10 @@ namespace NodeEditor.Editor.Tests
             Assert.AreEqual(3, graph.GetNodes<INode>().Count());
 
             graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), middleNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
 
             graph.Connect(middleNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(2, graph.edges.Count());
+            Assert.AreEqual(2, graph.GetEdges().Count);
 
             var edgesOnMiddleNode = NodeUtils.GetAllEdges(middleNode);
             Assert.AreEqual(2, edgesOnMiddleNode.Count());
@@ -513,13 +519,13 @@ namespace NodeEditor.Editor.Tests
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
 
             var createdEdge = graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
-            var edge = graph.edges.FirstOrDefault();
+            Assert.AreEqual(1, graph.GetEdges().Count);
+            var edge = graph.GetEdges().FirstOrDefault();
             Assert.AreEqual(createdEdge, edge);
 
             var createdEdge2 = graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
-            var edge2 = graph.edges.FirstOrDefault();
+            Assert.AreEqual(1, graph.GetEdges().Count);
+            var edge2 = graph.GetEdges().FirstOrDefault();
             Assert.AreEqual(createdEdge2, edge2);
         }
 
@@ -537,10 +543,10 @@ namespace NodeEditor.Editor.Tests
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
 
             graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
 
             outputNode.RemoveSlot(TestableNode.Output0);
-            Assert.AreEqual(0, graph.edges.Count());
+            Assert.AreEqual(0, graph.GetEdges().Count);
         }
 
         [Test]
@@ -557,7 +563,7 @@ namespace NodeEditor.Editor.Tests
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
 
             var createdEdge2 = graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), new SlotReference(Guid.NewGuid(), 666));
-            Assert.AreEqual(0, graph.edges.Count());
+            Assert.AreEqual(0, graph.GetEdges().Count);
             Assert.IsNull(createdEdge2);
         }
 
@@ -576,7 +582,7 @@ namespace NodeEditor.Editor.Tests
 
             var createdEdge = graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), outputNode2.GetSlotReference(TestableNode.Output0));
             Assert.IsNull(createdEdge);
-            Assert.AreEqual(0, graph.edges.Count());
+            Assert.AreEqual(0, graph.GetEdges().Count);
         }
 
         [Test]
@@ -594,7 +600,7 @@ namespace NodeEditor.Editor.Tests
 
             var createdEdge = graph.Connect(inputNode.GetSlotReference(TestableNode.Input0), inputNode2.GetSlotReference(TestableNode.Input0));
             Assert.IsNull(createdEdge);
-            Assert.AreEqual(0, graph.edges.Count());
+            Assert.AreEqual(0, graph.GetEdges().Count);
         }
 
         [Test]
@@ -609,11 +615,11 @@ namespace NodeEditor.Editor.Tests
 
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
             graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
 
             graph.RemoveNode(graph.GetNodes<INode>().FirstOrDefault());
             Assert.AreEqual(1, graph.GetNodes<INode>().Count());
-            Assert.AreEqual(0, graph.edges.Count());
+            Assert.AreEqual(0, graph.GetEdges().Count);
         }
 
         [Test]
@@ -628,11 +634,11 @@ namespace NodeEditor.Editor.Tests
 
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
             graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
 
-            graph.RemoveEdge(graph.edges.FirstOrDefault());
+            graph.RemoveEdge(graph.GetEdges().FirstOrDefault());
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
-            Assert.AreEqual(0, graph.edges.Count());
+            Assert.AreEqual(0, graph.GetEdges().Count);
         }
 
         [Test]
@@ -647,11 +653,11 @@ namespace NodeEditor.Editor.Tests
 
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
             graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
 
-            graph.RemoveElements(graph.GetNodes<INode>(), graph.edges);
+            graph.RemoveElements(graph.GetNodes<INode>(), graph.GetEdges());
             Assert.AreEqual(0, graph.GetNodes<INode>().Count());
-            Assert.AreEqual(0, graph.edges.Count());
+            Assert.AreEqual(0, graph.GetEdges().Count);
         }
 
         [Test]
@@ -666,7 +672,7 @@ namespace NodeEditor.Editor.Tests
 
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
             graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
 
             Assert.AreEqual(1, graph.GetEdges(inputNode.GetSlotReference(TestableNode.Input0)).Count());
             Assert.AreEqual(1, graph.GetEdges(outputNode.GetSlotReference(TestableNode.Output0)).Count());
@@ -686,7 +692,7 @@ namespace NodeEditor.Editor.Tests
 
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
             graph.Connect(outputNode.GetSlotReference(TestableNode.Output0), inputNode.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
 
             var slots = inputNode.GetInputsWithNoConnection();
             Assert.AreEqual(2, slots.Count());
@@ -707,11 +713,11 @@ namespace NodeEditor.Editor.Tests
 
             Assert.AreEqual(2, graph.GetNodes<INode>().Count());
             graph.Connect(nodeA.GetSlotReference(TestableNode.Output0), nodeB.GetSlotReference(TestableNode.Input0));
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
 
             var edge = graph.Connect(nodeB.GetSlotReference(TestableNode.Output0), nodeA.GetSlotReference(TestableNode.Input0));
             Assert.IsNull(edge);
-            Assert.AreEqual(1, graph.edges.Count());
+            Assert.AreEqual(1, graph.GetEdges().Count);
         }
     }
 }

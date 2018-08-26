@@ -19,19 +19,10 @@ namespace NodeEditor
 				m_Version++;
 		}
 
-		public uint version
-		{
-			get { return m_Version; }
-		}
+		public uint version => m_Version;
 
-		public int index
-		{
-			get { return m_Index; }
-		}
+		public int index => m_Index;
 
-		public bool valid
-		{
-			get { return m_Version != 0; }
-		}
+		public bool valid => m_Version != 0;
 	}
 }

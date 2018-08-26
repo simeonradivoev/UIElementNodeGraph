@@ -5,15 +5,9 @@ namespace NodeEditor
 {
 	public class ValueProperty<T> : AbstractNodeProperty<T>
 	{
-		public override SerializedType propertyType
-		{
-			get { return typeof(T); }
-		}
+		public override SerializedType propertyType => typeof(T);
 
-		public override object defaultValue
-		{
-			get { return default(T); }
-		}
+		public override object defaultValue => default(T);
 
 		public override PreviewProperty GetPreviewNodeProperty()
 		{

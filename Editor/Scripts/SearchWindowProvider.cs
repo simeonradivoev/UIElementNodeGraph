@@ -25,7 +25,10 @@ namespace NodeEditor.Scripts
 		    typeof(Color),
 		    typeof(Rect),
 		    typeof(Bounds),
-		    typeof(Quaternion)
+		    typeof(Quaternion),
+			typeof(Rect),
+			typeof(Gradient),
+			typeof(AnimationCurve)
 		};
 
         EditorWindow m_EditorWindow;
@@ -93,9 +96,9 @@ namespace NodeEditor.Scripts
 	        {
 		        var node = new PropertyNode();
 		        var property1 = property;
-		        node.owner = m_Graph;
+		        node.SetOwner(m_Graph);
 		        node.propertyGuid = property1.guid;
-		        node.owner = null;
+		        node.SetOwner(null);
 		        AddEntries(node, new[] { "Properties", "Property: " + property.displayName }, nodeEntries);
 	        }
 
@@ -104,9 +107,34 @@ namespace NodeEditor.Scripts
 	        {
 		        var valueNodeType = genericValueType.MakeGenericType(valueType);
 		        var valueNode = (AbstractNode)Activator.CreateInstance(valueNodeType);
-		        valueNode.owner = m_Graph;
+		        valueNode.SetOwner(m_Graph);
 		        AddEntries(valueNode, new[] { "Values", "Value: " + valueType.Name }, nodeEntries);
 			}
+
+			if (connectedPort != null)
+	        {
+		        var genericGlobalPropertyType = typeof(GlobalPropertyNode<>);
+		        foreach (var valueType in ValueTypes.Concat(new []{connectedPort.portType}).Distinct())
+		        {
+			        var globalPropertyNodeType = genericGlobalPropertyType.MakeGenericType(valueType);
+			        var globalPropertyNode = (AbstractNode)Activator.CreateInstance(globalPropertyNodeType);
+			        globalPropertyNode.SetOwner(m_Graph);
+			        AddEntries(globalPropertyNode, new[] { "Values", "Global Property: " + valueType.Name }, nodeEntries);
+		        }
+
+		        if ((typeof(UnityEngine.Object).IsAssignableFrom(connectedPort.portType) || typeof(UnityEngine.Object) == connectedPort.portType))
+		        {
+			        var exposedReferenceNodeType = typeof(ExposedReferenceNode<>).MakeGenericType(connectedPort.portType);
+			        var exposedRefNode = (AbstractNode) Activator.CreateInstance(exposedReferenceNodeType);
+			        exposedRefNode.SetOwner(m_Graph);
+			        AddEntries(exposedRefNode, new[] {"Values", "Reference: " + connectedPort.portType.Name}, nodeEntries);
+
+			        var resourceNodeType = typeof(ResourceNode<>).MakeGenericType(connectedPort.portType);
+			        var resourceNode = (AbstractNode) Activator.CreateInstance(resourceNodeType);
+			        resourceNode.SetOwner(m_Graph);
+			        AddEntries(resourceNode, new[] {"Values", "Resource: " + connectedPort.portType.Name}, nodeEntries);
+		        }
+	        }
 
 			// Sort the entries lexicographically by group then title with the requirement that items always comes before sub-groups in the same group.
 			// Example result:
@@ -200,14 +228,14 @@ namespace NodeEditor.Scripts
                 return;
             }
 
-            var connectedSlot = connectedPort.slot;
+			var connectedSlot = connectedPort.slot;
             m_Slots.Clear();
             node.GetSlots(m_Slots);
             var hasSingleSlot = m_Slots.Count(s => s.isOutputSlot != connectedSlot.isOutputSlot) == 1;
             m_Slots.RemoveAll(slot =>
                 {
                     var materialSlot = (NodeSlot)slot;
-                    return !materialSlot.IsCompatibleWith(connectedSlot);
+                    return connectedSlot.isOutputSlot ? !connectedSlot.IsCompatibleWith(materialSlot) : !materialSlot.IsCompatibleWith(connectedSlot);
                 });
 
             if (hasSingleSlot && m_Slots.Count == 1)
