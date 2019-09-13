@@ -37,7 +37,7 @@ namespace NodeEditor.Nodes
 
         public Guid propertyGuid
         {
-            get { return m_PropertyGuid; }
+            get => m_PropertyGuid;
             set
             {
                 if (m_PropertyGuid == value)

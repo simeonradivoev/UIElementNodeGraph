@@ -7,6 +7,9 @@ using UnityEngine;
 
 namespace NodeEditor
 {
+    /// <summary>
+    /// Base node class for all nodes.
+    /// </summary>
 	public class AbstractNode : INode, ISerializationCallbackReceiver, IDisposable
 	{
 		protected static List<NodeSlot> s_TempSlots = new List<NodeSlot>();
@@ -53,20 +56,32 @@ namespace NodeEditor
 				m_OnModified(this, scope);
 		}
 
+        /// <summary>
+        /// A unique guid for each node. Used to distinguish nodes, reference them and serialize them.
+        /// </summary>
 		public Guid guid => m_Guid;
 
+        /// <summary>
+        /// Name of the node. This name can be edited by users.
+        /// </summary>
 		public string name
 		{
-			get { return m_Name; }
-			set { m_Name = value; }
-		}
+			get => m_Name;
+            set => m_Name = value;
+        }
 
+        /// <summary>
+        /// URL link of the documentation of this node.
+        /// </summary>
 		public virtual string documentationURL => null;
 
+        /// <summary>
+        /// Can a node be deleted by the user from a context menu.
+        /// </summary>
 		public virtual bool canDeleteNode => true;
 
-		public int priority { get { return m_Priority;}
-			set
+		public int priority { get => m_Priority;
+            set
 			{
 				if (m_Priority != value)
 				{
@@ -78,8 +93,7 @@ namespace NodeEditor
 
 		private void OnPriorityChange()
 		{
-			var abstractNodeGraph = owner as AbstractNodeGraph;
-			if (abstractNodeGraph != null)
+            if (owner is AbstractNodeGraph abstractNodeGraph)
 			{
 				abstractNodeGraph.SortEdges(guid);
 			}
@@ -88,22 +102,28 @@ namespace NodeEditor
 
 		public DrawState drawState
 		{
-			get { return m_DrawState; }
-			set
+			get => m_DrawState;
+            set
 			{
 				m_DrawState = value;
 				Dirty(ModificationScope.Node);
 			}
 		}
 
+        /// <summary>
+        /// A list of all slots.
+        /// </summary>
 		protected IEnumerable<ISlot> slots => m_Slots.Values;
 
 		[SerializeField] bool m_PreviewExpanded = true;
 
+        /// <summary>
+        /// Is the preview for this node expanded.
+        /// </summary>
 		public bool previewExpanded
 		{
-			get { return m_PreviewExpanded; }
-			set
+			get => m_PreviewExpanded;
+            set
 			{
 				if (previewExpanded == value)
 					return;
@@ -112,24 +132,33 @@ namespace NodeEditor
 			}
 		}
 
-		// Nodes that want to have a preview area can override this and return true
-		public virtual bool hasPreview => false;
+        /// <summary>
+        /// Nodes that want to have a preview area can override this and return true
+        /// </summary>
+        public virtual bool hasPreview => false;
 
+        /// <summary>
+        /// The type of preview the node will have.
+        /// </summary>
 		public virtual PreviewMode previewMode => PreviewMode.Preview2D;
 
-		// Nodes that want to have a preview area can override this and return true
+        public virtual bool allowedInSubGraph => true;
 
-		public virtual bool allowedInSubGraph => true;
-
+        /// <summary>
+        /// Should this node be allowed in the main graph. To be created by users.
+        /// </summary>
 		public virtual bool allowedInMainGraph => true;
 
 		public virtual bool allowedInLayerGraph => true;
 
+        /// <summary>
+        /// Does the node currently have an error.
+        /// </summary>
 		public virtual bool hasError
 		{
-			get { return m_HasError; }
-			protected set { m_HasError = value; }
-		}
+			get => m_HasError;
+            protected set => m_HasError = value;
+        }
 
 		string m_DefaultVariableName;
 		string m_NameForDefaultVariableName;
@@ -141,7 +170,7 @@ namespace NodeEditor
 			{
 				if (m_NameForDefaultVariableName != name || m_GuidForDefaultVariableName != guid)
 				{
-					m_DefaultVariableName = string.Format("{0}_{1}", name, GuidEncoder.Encode(guid));
+					m_DefaultVariableName = $"{name}_{GuidEncoder.Encode(guid)}";
 					m_NameForDefaultVariableName = name;
 					m_GuidForDefaultVariableName = guid;
 				}
@@ -157,12 +186,21 @@ namespace NodeEditor
 			version = 0;
 		}
 
+        /// <summary>
+        /// Rewrites the guid of the node.
+        /// </summary>
+        /// <returns></returns>
 		public Guid RewriteGuid()
 		{
 			m_Guid = Guid.NewGuid();
 			return m_Guid;
 		}
 
+        /// <summary>
+        /// Get all input slots of a given type.
+        /// </summary>
+        /// <typeparam name="T">The type of slots to search for.</typeparam>
+        /// <param name="foundSlots">This list will be populated with the found slots.</param>
 		public void GetInputSlots<T>(List<T> foundSlots) where T : ISlot
 		{
 			foreach (var slot in m_Slots.Values)
@@ -172,6 +210,11 @@ namespace NodeEditor
 			}
 		}
 
+        /// <summary>
+        /// Get all output slots of a given type.
+        /// </summary>
+        /// <typeparam name="T">The type of slots to search for.</typeparam>
+        /// <param name="foundSlots">This list will be populated with the found slots.</param>
 		public void GetOutputSlots<T>(List<T> foundSlots) where T : ISlot
 		{
 			foreach (var slot in m_Slots.Values)
@@ -181,6 +224,11 @@ namespace NodeEditor
 			}
 		}
 
+        /// <summary>
+        /// Get all slots of a given type. This includes input and output slots.
+        /// </summary>
+        /// <typeparam name="T">The type of slots to search for.</typeparam>
+        /// <param name="foundSlots">This list will be populated with the founds slots.</param>
 		public void GetSlots<T>(List<T> foundSlots) where T : ISlot
 		{
 			foreach (var slot in m_Slots.Values)
@@ -190,26 +238,32 @@ namespace NodeEditor
 			}
 		}
 
+        /// <summary>
+        /// Get a value for a slot.
+        /// Usually the value for slots is cached after calculations have been executed.
+        /// </summary>
+        /// <typeparam name="T">The type of value.</typeparam>
+        /// <param name="inputSlot">The value for what slot.</param>
+        /// <returns>
+        /// The value of a given type from a given slot.
+        /// If no slot is found the default value for a value type will be returned.
+        /// </returns>
 		public T GetSlotValue<T>(ISlot inputSlot)
 		{
-			var nodeSlot = inputSlot as NodeSlot;
-			if (nodeSlot != null)
+            if (inputSlot is NodeSlot nodeSlot)
 			{
 				var con = nodeSlot.GetSlotConnectionCache().FirstOrDefault();
 
 				if (con != null)
 				{
-					var hasValueSlot = con as IHasValue<T>;
-					if (hasValueSlot != null)
+                    if (con is IHasValue<T> hasValueSlot)
 						return hasValueSlot.value;
 
-					var hasValueBase = con as IHasValue;
-					if (hasValueBase != null)
+                    if (con is IHasValue hasValueBase)
 						return (T) hasValueBase.value;
 				}
 
-				var hasValueInput = inputSlot as IHasValue<T>;
-				if (hasValueInput != null)
+                if (inputSlot is IHasValue<T> hasValueInput)
 					return hasValueInput.value;
 			}
 			else
@@ -221,39 +275,41 @@ namespace NodeEditor
 					var fromSocketRef = edge.outputSlot;
 					var fromNode = owner.GetNodeFromGuid<AbstractNode>(fromSocketRef.nodeGuid);
 					if (fromNode == null)
-						return default(T);
+						return default;
 
 					var slot = fromNode.FindValueOutputSlot<T>(fromSocketRef.slotId);
 					if (slot == null)
-						return default(T);
+						return default;
 
 					return slot.value;
 				}
 
-				var hasValue = inputSlot as IHasValue<T>;
-				return hasValue != null ? hasValue.value : default(T);
+                return inputSlot is IHasValue<T> hasValue ? hasValue.value : default;
 			}
 
-			return default(T);
+			return default;
 		}
 
+        /// <summary>
+        /// Get all values for a slot.
+        /// </summary>
+        /// <typeparam name="T">Type of values to get.</typeparam>
+        /// <param name="inputSlot">The slot used to get values from.</param>
+        /// <param name="values">This list will be populated with all the values from a given slot.</param>
 		public void GetSlotValues<T>(ISlot inputSlot,IList<T> values)
 		{
-			var nodeSlot = inputSlot as NodeSlot;
-			if (nodeSlot != null)
+            if (inputSlot is NodeSlot nodeSlot)
 			{
 				var cache = nodeSlot.GetSlotConnectionCache();
 				foreach (var slot in cache)
 				{
-					var hasValueSlot = slot as IHasValue<T>;
-					if (hasValueSlot != null)
+                    if (slot is IHasValue<T> hasValueSlot)
 					{
 						values.Add(hasValueSlot.value);
 					}
 					else
 					{
-						var hasValueBase = slot as IHasValue;
-						if (hasValueBase != null)
+                        if (slot is IHasValue hasValueBase)
 							values.Add((T)hasValueBase.value);
 					}
 				}
@@ -268,14 +324,14 @@ namespace NodeEditor
 					var fromNode = owner.GetNodeFromGuid<AbstractNode>(fromSocketRef.nodeGuid);
 					if (fromNode == null)
 					{
-						values.Add(default(T));
+						values.Add(default);
 					}
 					else
 					{
 						var slot = fromNode.FindValueOutputSlot<T>(fromSocketRef.slotId);
 						if (slot == null)
 						{
-							values.Add(default(T));
+							values.Add(default);
 						}
 						else
 						{
@@ -287,11 +343,14 @@ namespace NodeEditor
 			}
 		}
 
-		public T GetSlotValue<T>(int inputSlotId)
+        /// <summary>
+        /// Same as <see cref="GetSlotValue{T}(NodeEditor.ISlot)"/> but with a slot string id.
+        /// </summary>
+        public T GetSlotValue<T>(int inputSlotId)
 		{
 			var inputSlot = FindSlot<NodeSlot>(inputSlotId);
 			if (inputSlot == null)
-				return default(T);
+				return default;
 
 			return GetSlotValue<T>(inputSlot);
 		}
@@ -306,6 +365,9 @@ namespace NodeEditor
 				});
 		}
 
+        /// <summary>
+        /// Validate a given node. If there was an error the parameter <see cref="hasError"/> will be set to true.
+        /// </summary>
 		public virtual void ValidateNode()
 		{
 			var isInError = false;
@@ -406,10 +468,16 @@ namespace NodeEditor
 			}
 		}
 
+        /// <summary>
+        /// The current version fo the node. Each time a validation is ran successfully this will increase.
+        /// </summary>
 		public int version { get; set; }
 
-		//True if error
-		protected virtual bool CalculateNodeHasError()
+        /// <summary>
+        /// True if error
+        /// </summary>
+        /// <returns></returns>
+        protected virtual bool CalculateNodeHasError()
 		{
 			return false;
 		}
@@ -442,6 +510,10 @@ namespace NodeEditor
 			return defaultVariableName;
 		}
 
+        /// <summary>
+        /// Add a slot to the node.
+        /// </summary>
+        /// <param name="slot">The slot to add.</param>
 		public void AddSlot(ISlot slot)
 		{
 			if(slot == null) throw new ArgumentNullException("slot");
@@ -457,6 +529,10 @@ namespace NodeEditor
 			Dirty(ModificationScope.Topological);
 		}
 
+        /// <summary>
+        /// Remove all slots with matching ids.
+        /// </summary>
+        /// <param name="index"></param>
 		public void RemoveSlotsNameNotMatching(IEnumerable<int> index)
 		{
 			var keys = m_Slots.Keys.Except(index).ToArray();
@@ -466,6 +542,10 @@ namespace NodeEditor
 			}
 		}
 
+        /// <summary>
+        /// Remove a slot with a given id.
+        /// </summary>
+        /// <param name="slotId"></param>
 		public void RemoveSlot(int slotId)
 		{
 			// Remove edges that use this slot
@@ -477,8 +557,7 @@ namespace NodeEditor
 					owner.RemoveEdge(edge);
 			}
 
-			ISlot slot;
-			if (m_Slots.TryGetValue(slotId,out slot))
+            if (m_Slots.TryGetValue(slotId,out var slot))
 			{
 				if(slot is IDisposable) ((IDisposable)slot).Dispose();
 			}
@@ -488,6 +567,11 @@ namespace NodeEditor
 			Dirty(ModificationScope.Topological);
 		}
 
+        /// <summary>
+        /// Get a slot reference from a slot ID.
+        /// </summary>
+        /// <param name="slotId"></param>
+        /// <returns></returns>
 		public SlotReference GetSlotReference(int slotId)
 		{
 			var slot = FindSlot<ISlot>(slotId);
@@ -496,32 +580,41 @@ namespace NodeEditor
 			return new SlotReference(guid, slotId);
 		}
 
+        /// <summary>
+        /// Find a slot with a given ID.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="slotId"></param>
+        /// <returns></returns>
 		public T FindSlot<T>(int slotId) where T : ISlot 
 		{
-			ISlot slot;
-			if (m_Slots.TryGetValue(slotId, out slot) && slot is T)
+            if (m_Slots.TryGetValue(slotId, out var slot) && slot is T)
 			{
 				return (T)slot;
 			}
 
-			return default(T);
+			return default;
 		}
 
+        /// <summary>
+        /// Find an input slot with a given ID.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="slotId"></param>
+        /// <returns></returns>
 		public T FindInputSlot<T>(int slotId) where T : ISlot
 		{
-			ISlot slot;
-			if (m_Slots.TryGetValue(slotId, out slot) && slot.isInputSlot && slot is T)
+            if (m_Slots.TryGetValue(slotId, out var slot) && slot.isInputSlot && slot is T)
 			{
 				return (T)slot;
 			}
 
-			return default(T);
+			return default;
 		}
 
 		public IHasValue<T> FindValueOutputSlot<T>(int slotId)
 		{
-			ISlot slot;
-			if (m_Slots.TryGetValue(slotId, out slot) && slot.isOutputSlot)
+            if (m_Slots.TryGetValue(slotId, out var slot) && slot.isOutputSlot)
 			{
 				return slot as IHasValue<T>;
 			}
@@ -531,13 +624,12 @@ namespace NodeEditor
 
 		public T FindOutputSlot<T>(int slotId) where T : ISlot
 		{
-			ISlot slot;
-			if (m_Slots.TryGetValue(slotId, out slot) && slot.isOutputSlot && slot is T)
+            if (m_Slots.TryGetValue(slotId, out var slot) && slot.isOutputSlot && slot is T)
 			{
 				return (T)slot;
 			}
 
-			return default(T);
+			return default;
 		}
 
 		public virtual int CompareTo(INode other)
@@ -585,12 +677,21 @@ namespace NodeEditor
 		public T CreateSlot<T>(string idName, string displayName, SlotType type) where T : NodeSlot, new()
 		{
 			int id = idName.GetHashCode();
-			if(m_Slots.ContainsKey(id)) throw new Exception(string.Format("'{0}' has collision detected with {1}. Use a different name or manually assign id", idName,m_Slots[id].displayName));
+			if(m_Slots.ContainsKey(id)) throw new Exception(
+                $"'{idName}' has collision detected with {m_Slots[id].displayName}. Use a different name or manually assign id");
 			return CreateSlot<T>(id,displayName,type);
 		}
 
 		#endregion
 
+        /// <summary>
+        /// Create a slot in the current node.
+        /// </summary>
+        /// <typeparam name="T">Type of slot to create.</typeparam>
+        /// <param name="id">The id of the slot.</param>
+        /// <param name="displayName">The display name of the slot.</param>
+        /// <param name="type">Input or output slot.</param>
+        /// <returns></returns>
 		public T CreateSlot<T>(int id, string displayName, SlotType type) where T : NodeSlot, new()
 		{
 			var slot = new T()
@@ -616,7 +717,7 @@ namespace NodeEditor
 		public virtual void OnBeforeSerialize()
 		{
 			m_GuidSerialized = m_Guid.ToString();
-			m_SerializableSlots = SerializationHelper.Serialize<ISlot>(m_Slots,false);
+			m_SerializableSlots = SerializationHelper.Serialize<ISlot>(m_Slots);
 		}
 
 		public virtual void OnAfterDeserialize()
@@ -639,6 +740,11 @@ namespace NodeEditor
 		{
 		}
 
+        /// <summary>
+        /// Is a slot with given ID connected to any other slots.
+        /// </summary>
+        /// <param name="slotId"></param>
+        /// <returns></returns>
 		public bool IsSlotConnected(int slotId)
 		{
 			var slot = FindSlot<ISlot>(slotId);
@@ -665,11 +771,17 @@ namespace NodeEditor
 			}
 		}
 
+        /// <summary>
+        /// Called when a node is added to a graph.
+        /// </summary>
 		public virtual void OnAdd()
 		{
 
 		}
 
+        /// <summary>
+        /// Called when a node is removed from a graph.
+        /// </summary>
 		public virtual void OnRemove()
 		{
 

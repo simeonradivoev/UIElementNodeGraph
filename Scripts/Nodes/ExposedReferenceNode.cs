@@ -4,8 +4,18 @@ using Object = UnityEngine.Object;
 
 namespace NodeEditor.Nodes
 {
+    /// <summary>
+    /// A node that can only be created by dragging from a input field of type object.
+    /// This node creates a reference entry with a unique guid in it's owner if the owner is of type <see cref="IReferenceTable"/>.
+    /// Then that guid is used to get and set the object reference from the <see cref="IReferenceTable"/>.
+    /// When node is deleted it also deletes the reference in <see cref="IReferenceTable"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of object to reference.</typeparam>
 	public class ExposedReferenceNode<T> : AbstractNode where T : Object
 	{
+        /// <summary>
+        /// The guid of the exposed reference parameter. Created and stored in <see cref="IReferenceTable"/>.
+        /// </summary>
 		[ExposedReferenceControl]
 		public Guid propertyId => guid;
 
@@ -18,27 +28,27 @@ namespace NodeEditor.Nodes
 		public override void ValidateNode()
 		{
 			base.ValidateNode();
-			var referenceTable = owner.owner as IReferenceTable;
-			if (referenceTable != null)
+            if (owner.owner is IReferenceTable referenceTable)
 			{
-				bool valid;
-				referenceTable.GetReferenceValue(guid, out valid);
+                referenceTable.GetReferenceValue(guid, out var valid);
 				if (!valid)
 				{
-					referenceTable?.SetReferenceValue(guid, null);
+					referenceTable.SetReferenceValue(guid, null);
 				}
 			}
 		}
 
+        /// <summary>
+        /// Gets the value of the property found in <see cref="IReferenceTable"/> with the given guid.
+        /// </summary>
+        /// <returns></returns>
 		private T ResolveValue()
 		{
-			var table = owner.owner as IReferenceTable;
-			if (table != null)
+            if (owner.owner is IReferenceTable table)
 			{
-				bool isValid;
-				return table.GetReferenceValue(guid, out isValid) as T;
+                return table.GetReferenceValue(guid, out _) as T;
 			}
-			return default(T);
+			return default;
 		}
 
 		public override void OnRemove()

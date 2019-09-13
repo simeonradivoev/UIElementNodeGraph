@@ -67,7 +67,7 @@ namespace NodeEditor
 			return null;
 		}
 
-		public static JSONSerializedIndexedElement Serialize<T>(KeyValuePair<int, T> item, bool prettyPrint)
+		public static JSONSerializedIndexedElement Serialize<T>(KeyValuePair<int, T> item)
 		{
 			if (item.Value == null)
 				throw new ArgumentNullException("item", "Can not serialize null element");
@@ -76,7 +76,7 @@ namespace NodeEditor
 			var data = JsonUtility.ToJson(item.Value, true);
 
 			if (string.IsNullOrEmpty(data))
-				throw new ArgumentException(string.Format("Can not serialize {0}", item.Value));
+				throw new ArgumentException($"Can not serialize {item.Value}");
 			;
 
 			return new JSONSerializedIndexedElement
@@ -87,16 +87,16 @@ namespace NodeEditor
 			};
 		}
 
-		public static JSONSerializedElement Serialize<T>(T item,bool prettyPrint)
+		public static JSONSerializedElement Serialize<T>(T item)
 		{
 			if (item == null)
 				throw new ArgumentNullException("item", "Can not serialize null element");
 
 			var typeInfo = GetTypeSerializableAsString(item.GetType());
-			var data = JsonUtility.ToJson(item, prettyPrint);
+			var data = JsonUtility.ToJson(item, false);
 
 			if (string.IsNullOrEmpty(data))
-				throw new ArgumentException(string.Format("Can not serialize {0}", item));
+				throw new ArgumentException($"Can not serialize {item}");
 			;
 
 			return new JSONSerializedElement
@@ -108,8 +108,7 @@ namespace NodeEditor
 
 		static TypeSerializationInfo DoTypeRemap(TypeSerializationInfo info, Dictionary<TypeSerializationInfo, TypeSerializationInfo> remapper)
 		{
-			TypeSerializationInfo foundInfo;
-			if (remapper.TryGetValue(info, out foundInfo))
+            if (remapper.TryGetValue(info, out var foundInfo))
 				return foundInfo;
 			return info;
 		}
@@ -127,7 +126,7 @@ namespace NodeEditor
 		public static T Deserialize<T>(string data, TypeSerializationInfo typeInfo, Dictionary<TypeSerializationInfo, TypeSerializationInfo> remapper,  params object[] constructorArgs) where T : class
 		{
 			if (!typeInfo.IsValid() || string.IsNullOrEmpty(data))
-				throw new ArgumentException(string.Format("Can not deserialize {0} of type {1}, it is invalid", data, typeInfo));
+				throw new ArgumentException($"Can not deserialize {data} of type {typeInfo}, it is invalid");
 
 			typeInfo.fullName = typeInfo.fullName.Replace("UnityEngine.MaterialGraph", "UnityEditor.ShaderGraph");
 			typeInfo.fullName = typeInfo.fullName.Replace("UnityEngine.Graphing", "UnityEditor.Graphing");
@@ -136,7 +135,7 @@ namespace NodeEditor
 
 			var type = GetTypeFromSerializedString(typeInfo);
 			if (type == null)
-				throw new ArgumentException(string.Format("Can not deserialize ({0}), type is invalid", typeInfo.fullName));
+				throw new ArgumentException($"Can not deserialize ({typeInfo.fullName}), type is invalid");
 
 			T instance;
 			try
@@ -145,7 +144,7 @@ namespace NodeEditor
 			}
 			catch (Exception e)
 			{
-				throw new Exception(string.Format("Could not construct instance of: {0}", type), e);
+				throw new Exception($"Could not construct instance of: {type}", e);
 			}
 
 			if (instance != null)
@@ -156,7 +155,7 @@ namespace NodeEditor
 			return null;
 		}
 
-		public static List<JSONSerializedIndexedElement> Serialize<T>(IDictionary<int,T> dictionary, bool prettyPrint)
+		public static List<JSONSerializedIndexedElement> Serialize<T>(IDictionary<int,T> dictionary)
 		{
 			var result = new List<JSONSerializedIndexedElement>();
 			if (dictionary == null)
@@ -166,7 +165,7 @@ namespace NodeEditor
 			{
 				try
 				{
-					result.Add(Serialize(element, prettyPrint));
+					result.Add(Serialize(element));
 				}
 				catch (Exception e)
 				{
@@ -186,7 +185,7 @@ namespace NodeEditor
 			{
 				try
 				{
-					result.Add(Serialize(element,false));
+					result.Add(Serialize(element));
 				}
 				catch (Exception e)
 				{
@@ -223,13 +222,12 @@ namespace NodeEditor
 			{
 				try
 				{
-					T existingElement;
-					if (dictionary.TryGetValue(element.index,out existingElement))
+                    if (dictionary.TryGetValue(element.index,out var existingElement))
 					{
 						TypeSerializationInfo info = element.typeInfo;
 						var type = GetTypeFromSerializedString(info);
 						if (type == null)
-							throw new ArgumentException(string.Format("Can not deserialize ({0}), type is invalid", info.fullName));
+							throw new ArgumentException($"Can not deserialize ({info.fullName}), type is invalid");
 
 						if (!type.IsInstanceOfType(existingElement))
 						{

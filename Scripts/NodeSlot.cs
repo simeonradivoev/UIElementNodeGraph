@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 
 namespace NodeEditor
 {
@@ -57,9 +57,9 @@ namespace NodeEditor
 
 		public virtual string displayName
 		{
-			get { return m_DisplayName + string.Format(" ({0})", valueType.Type.Name); }
-			set { m_DisplayName = value; }
-		}
+			get => m_DisplayName + $" ({valueType.Type.Name})";
+            set => m_DisplayName = value;
+        }
 
 		public string RawDisplayName()
 		{
@@ -78,21 +78,21 @@ namespace NodeEditor
 
 		public bool allowMultipleConnections
 		{
-			get { return m_AllowMultipleConnections; }
-			set { m_AllowMultipleConnections = value; }
-		}
+			get => m_AllowMultipleConnections;
+            set => m_AllowMultipleConnections = value;
+        }
 
 		public bool hidden
 		{
-			get { return m_Hidden; }
-			set { m_Hidden = value; }
-		}
+			get => m_Hidden;
+            set => m_Hidden = value;
+        }
 
 		public int id
 		{
-			get { return m_Id; }
-			protected internal set { m_Id = value; }
-		}
+			get => m_Id;
+            protected internal set => m_Id = value;
+        }
 
 		public NodeSlot SetPriority(int priority)
 		{
@@ -102,9 +102,9 @@ namespace NodeEditor
 
 		public int priority
 		{
-			get { return m_Priority; }
-			set { m_Priority = value; }
-		}
+			get => m_Priority;
+            set => m_Priority = value;
+        }
 
 		public bool isInputSlot => m_SlotType == SlotType.Input;
 
@@ -112,9 +112,9 @@ namespace NodeEditor
 
 		public SlotType slotType
 		{
-			get { return m_SlotType; }
-			protected internal set { m_SlotType = value; }
-		}
+			get => m_SlotType;
+            protected internal set => m_SlotType = value;
+        }
 
 		public bool isConnected
 		{
@@ -132,9 +132,9 @@ namespace NodeEditor
 
 		public bool hasError
 		{
-			get { return m_HasError; }
-			set { m_HasError = value; }
-		}
+			get => m_HasError;
+            set => m_HasError = value;
+        }
 
 
 		public abstract SerializedType valueType
@@ -153,7 +153,7 @@ namespace NodeEditor
 
 		public virtual void GetPreviewProperties(List<PreviewProperty> properties)
 		{
-			properties.Add(default(PreviewProperty));
+			properties.Add(default);
 		}
 
 		public abstract void CopyValuesFrom(NodeSlot foundSlot);

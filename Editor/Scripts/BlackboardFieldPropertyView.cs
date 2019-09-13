@@ -1,10 +1,10 @@
 using NodeEditor.Nodes;
-using UnityEditor.Experimental.UIElements;
+using UnityEditor.UIElements;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
-using Toggle = UnityEngine.Experimental.UIElements.Toggle;
+using UnityEngine.UIElements;
+using Toggle = UnityEngine.UIElements.Toggle;
 #if UNITY_2018_3_OR_NEWER
-using ContextualMenu = UnityEngine.Experimental.UIElements.DropdownMenu;
+using ContextualMenu = UnityEngine.UIElements.DropdownMenu;
 #endif
 
 namespace NodeEditor.Scripts
@@ -19,11 +19,11 @@ namespace NodeEditor.Scripts
 
         public BlackboardFieldPropertyView(AbstractNodeGraph graph, INodeProperty property)
         {
-            AddStyleSheetPath("Styles/NodeGraphBlackboard");
+            styleSheets.Add(Resources.Load<StyleSheet>("Styles/NodeGraphBlackboard"));
             m_Graph = graph;
 
 	        m_Reference = new TextField();
-	        m_Reference.OnValueChanged(evt =>
+	        m_Reference.RegisterValueChangedCallback(evt =>
             {
                 property.reference = evt.newValue;
                 DirtyNodes(ModificationScope.Graph);
@@ -35,7 +35,7 @@ namespace NodeEditor.Scripts
             {
                 var floatProperty = (ValueProperty<float>)property;
 	            FloatField floatField = new FloatField { value = floatProperty.value };
-	            floatField.OnValueChanged(evt =>
+	            floatField.RegisterValueChangedCallback(evt =>
 	            {
 		            floatProperty.value = (float)evt.newValue;
 		            DirtyNodes();
@@ -68,7 +68,7 @@ namespace NodeEditor.Scripts
 	            var intProperty = (ValueProperty<int>)property;
 
 	            var field = new IntegerField { value = intProperty.value };
-	            field.OnValueChanged(intEvt =>
+	            field.RegisterValueChangedCallback(intEvt =>
 	            {
 		            intProperty.value = intEvt.newValue;
 		            DirtyNodes();
@@ -79,7 +79,7 @@ namespace NodeEditor.Scripts
             {
                 var vectorProperty = (ValueProperty<Vector2>)property;
                 var field = new Vector2Field { value = vectorProperty.value };
-                field.OnValueChanged(evt =>
+                field.RegisterValueChangedCallback(evt =>
                     {
                         vectorProperty.value = evt.newValue;
                         DirtyNodes();
@@ -90,7 +90,7 @@ namespace NodeEditor.Scripts
             {
                 var vectorProperty = (ValueProperty<Vector3>)property;
                 var field = new Vector3Field { value = vectorProperty.value };
-                field.OnValueChanged(evt =>
+                field.RegisterValueChangedCallback(evt =>
                     {
                         vectorProperty.value = evt.newValue;
                         DirtyNodes();
@@ -101,7 +101,7 @@ namespace NodeEditor.Scripts
             {
                 var vectorProperty = (ValueProperty<Vector4>)property;
                 var field = new Vector4Field { value = vectorProperty.value };
-                field.OnValueChanged(evt =>
+                field.RegisterValueChangedCallback(evt =>
                     {
                         vectorProperty.value = evt.newValue;
                         DirtyNodes();
@@ -113,7 +113,7 @@ namespace NodeEditor.Scripts
                 var colorProperty = (ValueProperty<Color>)property;
 				//todo add HDR
                 var colorField = new ColorField { value = (Color)property.defaultValue, showEyeDropper = false};
-                colorField.OnValueChanged(evt =>
+                colorField.RegisterValueChangedCallback(evt =>
                     {
                         colorProperty.value = evt.newValue;
                         DirtyNodes();
@@ -124,7 +124,7 @@ namespace NodeEditor.Scripts
             {
                 var textureProperty = (ValueProperty<Texture2D>)property;
                 var field = new ObjectField { value = textureProperty.value, objectType = typeof(Texture2D) };
-                field.OnValueChanged(evt =>
+                field.RegisterValueChangedCallback(evt =>
                     {
                         textureProperty.value = (Texture2D)evt.newValue;
                         DirtyNodes();
@@ -135,7 +135,7 @@ namespace NodeEditor.Scripts
             {
                 var cubemapProperty = (ValueProperty<Cubemap>)property;
                 var field = new ObjectField { value = cubemapProperty.value, objectType = typeof(Cubemap) };
-                field.OnValueChanged(evt =>
+                field.RegisterValueChangedCallback(evt =>
                     {
                         cubemapProperty.value = (Cubemap)evt.newValue;
                         DirtyNodes();
@@ -151,7 +151,7 @@ namespace NodeEditor.Scripts
                         DirtyNodes();
                     };
                 var field = new Toggle();
-                field.OnValueChanged(onBooleanChanged);
+                field.RegisterValueChangedCallback(onBooleanChanged);
                 field.value = booleanProperty.value;
                 AddRow("Default", field);
             }

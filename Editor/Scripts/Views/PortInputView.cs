@@ -1,29 +1,20 @@
 using System;
-using UnityEditor.Experimental.UIElements.GraphView;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
-using UnityEngine.Experimental.UIElements.StyleSheets;
+using UnityEngine.UIElements;
+using UnityEngine.UIElements.StyleSheets;
 
 namespace NodeEditor.Scripts.Views
 {
     public class PortInputView : GraphElement, IDisposable
     {
-        const string k_EdgeColorProperty = "edge-color";
+        readonly CustomStyleProperty<Color> k_EdgeColorProperty = new CustomStyleProperty<Color>("--edge-color");
 
-        StyleValue<Color> m_EdgeColor;
+        Color m_EdgeColor = Color.red;
 
-        public Color edgeColor
-        {
-	        get
-	        {
-		        return m_EdgeColor.value;
-	        }
-        }
+        public Color edgeColor => m_EdgeColor;
 
-        public NodeSlot slot
-        {
-            get { return m_Slot; }
-        }
+        public NodeSlot slot => m_Slot;
 
         NodeSlot m_Slot;
         SerializedType m_SlotType;
@@ -33,7 +24,7 @@ namespace NodeEditor.Scripts.Views
 
         public PortInputView(NodeSlot slot)
         {
-            AddStyleSheetPath("Styles/PortInputView");
+            styleSheets.Add(Resources.Load<StyleSheet>("Styles/PortInputView"));
             pickingMode = PickingMode.Ignore;
             ClearClassList();
             m_Slot = slot;
@@ -64,12 +55,17 @@ namespace NodeEditor.Scripts.Views
             Add(m_Container);
 
             m_Container.visible = m_EdgeControl.visible = m_Control != null;
+
+            RegisterCallback<CustomStyleResolvedEvent>(OnCustomStyleResolved);
         }
 
-        protected override void OnStyleResolved(ICustomStyle styles)
+        protected void OnCustomStyleResolved(CustomStyleResolvedEvent e)
         {
-            base.OnStyleResolved(styles);
-            styles.ApplyCustomProperty(k_EdgeColorProperty, ref m_EdgeColor);
+            Color colorValue;
+
+            if (e.customStyle.TryGetValue(k_EdgeColorProperty, out colorValue))
+                m_EdgeColor = colorValue;
+
             m_EdgeControl.UpdateLayout();
             m_EdgeControl.inputColor = edgeColor;
             m_EdgeControl.outputColor = edgeColor;
@@ -109,8 +105,7 @@ namespace NodeEditor.Scripts.Views
         public void Dispose()
         {
             var disposable = m_Control as IDisposable;
-            if (disposable != null)
-                disposable.Dispose();
+            disposable?.Dispose();
         }
     }
 }

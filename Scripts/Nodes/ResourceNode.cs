@@ -11,9 +11,9 @@ namespace NodeEditor.Nodes
 		[DefaultControl]
 		public string resourcePath
 		{
-			get { return m_ResourcePath; }
-			set { m_ResourcePath = value; }
-		}
+			get => m_ResourcePath;
+            set => m_ResourcePath = value;
+        }
 
 		public ResourceNode()
 		{

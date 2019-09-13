@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using NodeEditor.Nodes;
 using UnityEditor;
-using UnityEditor.Experimental.UIElements.GraphView;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
-using UnityEngine.Experimental.UIElements.StyleEnums;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Scripts
 {
@@ -59,13 +58,13 @@ namespace NodeEditor.Scripts
 				moveItemRequested = MoveItemRequested
 			};
 
-			m_PathLabel = blackboard.shadow.ElementAt(0).Q<Label>("subTitleLabel");
+			m_PathLabel = blackboard.hierarchy.ElementAt(0).Q<Label>("subTitleLabel");
 			m_PathLabel.RegisterCallback<MouseDownEvent>(OnMouseDownEvent);
 
 			m_PathLabelTextField = new TextField { visible = false };
 			m_PathLabelTextField.RegisterCallback<FocusOutEvent>(e => { OnEditPathTextFinished(); });
 			m_PathLabelTextField.RegisterCallback<KeyDownEvent>(OnPathTextFieldKeyPressed);
-			blackboard.shadow.Add(m_PathLabelTextField);
+			blackboard.hierarchy.Add(m_PathLabelTextField);
 
 			// m_WindowDraggable = new WindowDraggable(blackboard.shadow.Children().First().Q("header"));
 			// blackboard.AddManipulator(m_WindowDraggable);
@@ -93,10 +92,10 @@ namespace NodeEditor.Scripts
 			m_PathLabelTextField.visible = true;
 
 			m_PathLabelTextField.value = m_PathLabel.text;
-			m_PathLabelTextField.style.positionType = PositionType.Absolute;
+			m_PathLabelTextField.style.position = Position.Absolute;
 			var rect = m_PathLabel.ChangeCoordinatesTo(blackboard, new Rect(Vector2.zero, m_PathLabel.layout.size));
-			m_PathLabelTextField.style.positionLeft = rect.xMin;
-			m_PathLabelTextField.style.positionTop = rect.yMin;
+			m_PathLabelTextField.style.left = rect.xMin;
+			m_PathLabelTextField.style.top = rect.yMin;
 			m_PathLabelTextField.style.width = rect.width;
 			m_PathLabelTextField.style.fontSize = 11;
 			m_PathLabelTextField.style.marginLeft = 0;

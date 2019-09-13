@@ -100,7 +100,7 @@ namespace NodeEditor
 
 		public void OnBeforeSerialize()
 		{
-			m_SerializeableSourceGraphGuid = SerializationHelper.Serialize(m_SourceGraphGuid,false);
+			m_SerializeableSourceGraphGuid = SerializationHelper.Serialize(m_SourceGraphGuid);
 			m_SerializableNodes = SerializationHelper.Serialize<INode>(m_Nodes);
 			m_SerializableEdges = SerializationHelper.Serialize<IEdge>(m_Edges);
 			m_SerilaizeableProperties = SerializationHelper.Serialize<INodeProperty>(m_Properties);

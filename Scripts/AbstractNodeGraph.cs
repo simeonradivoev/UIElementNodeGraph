@@ -29,8 +29,7 @@ namespace NodeEditor
 
 		public INodeProperty GetProperty(Guid id)
 		{
-			INodeProperty prop;
-			if (m_PropertyDictionary.TryGetValue(id, out prop))
+            if (m_PropertyDictionary.TryGetValue(id, out var prop))
 			{
 				return prop;
 			}
@@ -117,8 +116,7 @@ namespace NodeEditor
 
 		public ReadOnlyList<IEdge> GetEdges(Guid nodeId)
 		{
-			List<IEdge> edges;
-			if (m_NodeEdges.TryGetValue(nodeId, out edges))
+            if (m_NodeEdges.TryGetValue(nodeId, out var edges))
 			{
 				return new ReadOnlyList<IEdge>(edges);
 			}
@@ -152,8 +150,8 @@ namespace NodeEditor
 
 		public string path
 		{
-			get { return m_Path; }
-			set
+			get => m_Path;
+            set
 			{
 				if (m_Path == value)
 					return;
@@ -234,13 +232,11 @@ namespace NodeEditor
 
 		void AddEdgeToNodeEdges(IEdge edge)
 		{
-			List<IEdge> inputEdges;
-			if (!m_NodeEdges.TryGetValue(edge.inputSlot.nodeGuid, out inputEdges))
+            if (!m_NodeEdges.TryGetValue(edge.inputSlot.nodeGuid, out var inputEdges))
 				m_NodeEdges[edge.inputSlot.nodeGuid] = inputEdges = new List<IEdge>();
 			inputEdges.Add(edge);
 
-			List<IEdge> outputEdges;
-			if (!m_NodeEdges.TryGetValue(edge.outputSlot.nodeGuid, out outputEdges))
+            if (!m_NodeEdges.TryGetValue(edge.outputSlot.nodeGuid, out var outputEdges))
 				m_NodeEdges[edge.outputSlot.nodeGuid] = outputEdges = new List<IEdge>();
 			outputEdges.Add(edge);
 		}
@@ -321,12 +317,10 @@ namespace NodeEditor
 				throw new ArgumentException("Trying to remove an edge that does not exist.", "e");
 			m_Edges.Remove(e);
 
-			List<IEdge> inputNodeEdges;
-			if (m_NodeEdges.TryGetValue(e.inputSlot.nodeGuid, out inputNodeEdges))
+            if (m_NodeEdges.TryGetValue(e.inputSlot.nodeGuid, out var inputNodeEdges))
 				inputNodeEdges.Remove(e);
 
-			List<IEdge> outputNodeEdges;
-			if (m_NodeEdges.TryGetValue(e.outputSlot.nodeGuid, out outputNodeEdges))
+            if (m_NodeEdges.TryGetValue(e.outputSlot.nodeGuid, out var outputNodeEdges))
 				outputNodeEdges.Remove(e);
 
 			m_RemovedEdges.Add(e);
@@ -334,8 +328,7 @@ namespace NodeEditor
 
 		public INode GetNodeFromGuid(Guid guid)
 		{
-			INode node;
-			m_NodeDictionary.TryGetValue(guid, out node);
+            m_NodeDictionary.TryGetValue(guid, out var node);
 			return node;
 		}
 
@@ -361,7 +354,7 @@ namespace NodeEditor
 			var node = GetNodeFromGuid(guid);
 			if (node is T)
 				return (T)node;
-			return default(T);
+			return default;
 		}
 
 		public void AddShaderProperty(INodeProperty property)
@@ -377,7 +370,7 @@ namespace NodeEditor
 			m_AddedProperties.Add(property);
 		}
 
-		public string SanitizePropertyName(string displayName, Guid guid = default(Guid))
+		public string SanitizePropertyName(string displayName, Guid guid = default)
 		{
 			displayName = displayName.Trim();
 			return GraphUtil.SanitizeName(m_Properties.Where(p => p.guid != guid).Select(p => p.displayName), "{0} ({1})", displayName);
@@ -467,8 +460,7 @@ namespace NodeEditor
 			if (node != null)
 			{
 				var tmpNodes = new HashSet<Guid> {nodeId};
-				List<IEdge> edgesTmp;
-				if (m_NodeEdges.TryGetValue(nodeId, out edgesTmp))
+                if (m_NodeEdges.TryGetValue(nodeId, out var edgesTmp))
 				{
 					foreach (var edge in edgesTmp)
 					{
@@ -513,8 +505,7 @@ namespace NodeEditor
 				if (slot != null)
 				{
 					slot.ClearConnectionCache();
-					List<IEdge> edges;
-					if(m_NodeEdges.TryGetValue(slotReference.nodeGuid, out edges))
+                    if(m_NodeEdges.TryGetValue(slotReference.nodeGuid, out var edges))
 					{
 						foreach (var edge in edges.Where(e => slot.isInputSlot ? e.inputSlot.Equals(slotReference) : e.outputSlot.Equals(slotReference)).OrderBy(e => GetNodeFromGuid(e.outputSlot.nodeGuid)))
 						{
@@ -603,8 +594,7 @@ namespace NodeEditor
 
 		public void ReplaceWith(IGraph other)
 		{
-			var otherMg = other as AbstractNodeGraph;
-			if (otherMg == null)
+            if (!(other is AbstractNodeGraph otherMg))
 				throw new ArgumentException("Can only replace with another AbstractNodeGraph", "other");
 
 			using (var removedPropertiesPooledObject = ListPool<Guid>.GetDisposable())
@@ -704,10 +694,8 @@ namespace NodeEditor
 				var outputSlot = edge.outputSlot;
 				var inputSlot = edge.inputSlot;
 
-				Guid remappedOutputNodeGuid;
-				Guid remappedInputNodeGuid;
-				if (nodeGuidMap.TryGetValue(outputSlot.nodeGuid, out remappedOutputNodeGuid)
-				    && nodeGuidMap.TryGetValue(inputSlot.nodeGuid, out remappedInputNodeGuid))
+                if (nodeGuidMap.TryGetValue(outputSlot.nodeGuid, out var remappedOutputNodeGuid)
+				    && nodeGuidMap.TryGetValue(inputSlot.nodeGuid, out var remappedInputNodeGuid))
 				{
 					var outputSlotRef = new SlotReference(remappedOutputNodeGuid, outputSlot.slotId);
 					var inputSlotRef = new SlotReference(remappedInputNodeGuid, inputSlot.slotId);

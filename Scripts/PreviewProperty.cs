@@ -14,8 +14,8 @@ namespace NodeEditor
 
 		public object value
 		{
-			get { return m_value; }
-			set { m_value = value; }
-		}
+			get => m_value;
+            set => m_value = value;
+        }
 	}
 }

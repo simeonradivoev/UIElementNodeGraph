@@ -1,4 +1,4 @@
-using UnityEditor.Experimental.UIElements.GraphView;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 namespace NodeEditor.Scripts
@@ -14,14 +14,14 @@ namespace NodeEditor.Scripts
             m_SearchWindowProvider = searchWindowProvider;
         }
 
-        public void OnDropOutsidePort(UnityEditor.Experimental.UIElements.GraphView.Edge edge, Vector2 position)
+        public void OnDropOutsidePort(UnityEditor.Experimental.GraphView.Edge edge, Vector2 position)
         {
-            var draggedPort = (edge.output != null ? edge.output.edgeConnector.edgeDragHelper.draggedPort : null) ?? (edge.input != null ? edge.input.edgeConnector.edgeDragHelper.draggedPort : null);
+            var draggedPort = edge.output?.edgeConnector.edgeDragHelper.draggedPort ?? edge.input?.edgeConnector.edgeDragHelper.draggedPort;
             m_SearchWindowProvider.connectedPort = (NodePort)draggedPort;
             SearchWindow.Open(new SearchWindowContext(GUIUtility.GUIToScreenPoint(Event.current.mousePosition)), m_SearchWindowProvider);
         }
 
-        public void OnDrop(GraphView graphView, UnityEditor.Experimental.UIElements.GraphView.Edge edge)
+        public void OnDrop(GraphView graphView, UnityEditor.Experimental.GraphView.Edge edge)
         {
             var leftSlot = edge.output.GetSlot();
             var rightSlot = edge.input.GetSlot();

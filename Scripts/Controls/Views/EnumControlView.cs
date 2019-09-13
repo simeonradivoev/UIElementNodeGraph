@@ -1,8 +1,8 @@
 ﻿using System;
 #if UNITY_EDITOR
-using UnityEditor.Experimental.UIElements;
+using UnityEditor.UIElements;
 #endif
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Controls.Views
 {
@@ -18,7 +18,7 @@ namespace NodeEditor.Controls.Views
 
 #if UNITY_EDITOR
 			var enumField = new EnumField((Enum)property.GetValue(node)){name = DefaultControlView.ValueFieldName};
-			enumField.OnValueChanged(e =>
+			enumField.RegisterValueChangedCallback(e =>
 			{
 				node.owner.owner.RegisterCompleteObjectUndo("Enum Change");
 				property.SetValue(node, e.newValue);

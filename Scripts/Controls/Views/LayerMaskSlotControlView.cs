@@ -5,7 +5,7 @@ using NodeEditor.Slots;
 using UnityEditor;
 #endif
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Controls.Views
 {

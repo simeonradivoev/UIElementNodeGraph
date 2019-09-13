@@ -4,12 +4,10 @@ using System.Linq;
 using System.Reflection;
 using NodeEditor.Controls;
 using NodeEditor.Util;
-using UnityEditor.Experimental.UIElements;
-using UnityEditor.Experimental.UIElements.GraphView;
+using UnityEditor.UIElements;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
-using UnityEngine.Experimental.UIElements.StyleEnums;
-using UnityEngine.Experimental.UIElements.StyleSheets;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Scripts.Views
 {
@@ -32,7 +30,7 @@ namespace NodeEditor.Scripts.Views
 
 		public void Initialize(AbstractNode inNode, IEdgeConnectorListener connectorListener)
 		{
-			AddStyleSheetPath("Styles/NodeView");
+			styleSheets.Add(Resources.Load<StyleSheet>("Styles/NodeView"));
 			AddToClassList("Node");
 
 			if (inNode == null)
@@ -42,12 +40,12 @@ namespace NodeEditor.Scripts.Views
 
 			m_ConnectorListener = connectorListener;
 			node = inNode;
-			persistenceKey = node.guid.ToString();
+			viewDataKey = node.guid.ToString();
 			var priorityField = new IntegerField() {value = node.priority,name = "priority-field",visible = CalculatePriorityVisibility(node)};
-			priorityField.OnValueChanged(e => node.priority = e.newValue);
+			priorityField.RegisterValueChangedCallback(e => node.priority = e.newValue);
 			titleContainer.Insert(1,priorityField);
 			m_PriorityField = priorityField;
-			m_TitleLabel = titleContainer.First(e => e.name == "title-label");
+			m_TitleLabel = titleContainer.Children().First(e => e.name == "title-label");
 			m_TitleLabel.RegisterCallback<MouseDownEvent>(OnTitleLabelMouseDown);
 			m_TitleField = new TextField
 			{
@@ -55,10 +53,10 @@ namespace NodeEditor.Scripts.Views
 				value = inNode.name,
 				visible = false
 			};
-			m_TitleField.style.positionType = PositionType.Absolute;
+			m_TitleField.style.position = Position.Absolute;
 			m_TitleField.RegisterCallback<FocusOutEvent>(e => { OnEditTitleTextFinished(); });
 			m_TitleField.RegisterCallback<KeyDownEvent>(OnTitleTextFieldKeyPressed);
-			titleContainer.shadow.Add(m_TitleField);
+			titleContainer.hierarchy.Add(m_TitleField);
 			UpdateTitle();
 
 			// Add controls container
@@ -92,7 +90,7 @@ namespace NodeEditor.Scripts.Views
 			m_PortInputContainer = new VisualElement
 			{
 				name = "portInputContainer",
-				clippingOptions = ClippingOptions.ClipAndCacheContents,
+				style = { overflow = Overflow.Hidden},
 				pickingMode = PickingMode.Ignore
 			};
 			Add(m_PortInputContainer);
@@ -138,7 +136,7 @@ namespace NodeEditor.Scripts.Views
 
 				// Remove this after updated to the correct API call has landed in trunk. ------------
 				m_ButtonContainer = new VisualElement { name = "button-container" };
-				m_ButtonContainer.style.flexDirection = StyleValue<FlexDirection>.Create(FlexDirection.Row);
+				m_ButtonContainer.style.flexDirection = FlexDirection.Row;
 				m_ButtonContainer.Add(m_SettingsButton);
 				m_ButtonContainer.Add(m_CollapseButton);
 				m_TitleContainer.Add(m_ButtonContainer);
@@ -164,9 +162,9 @@ namespace NodeEditor.Scripts.Views
 			m_TitleField.visible = true;
 
 			m_TitleField.value = node.name;
-			m_TitleField.style.positionType = PositionType.Absolute;
-			m_TitleField.style.positionLeft = titleContainer.layout.x;
-			m_TitleField.style.positionTop = titleContainer.layout.y;
+			m_TitleField.style.position = Position.Absolute;
+			m_TitleField.style.left = titleContainer.layout.x;
+			m_TitleField.style.top = titleContainer.layout.y;
 			m_TitleField.style.width = titleContainer.layout.width;
 			m_TitleField.style.height = titleContainer.layout.height;
 			m_TitleField.style.fontSize = m_TitleLabel.style.fontSize;
@@ -174,7 +172,7 @@ namespace NodeEditor.Scripts.Views
 			m_TitleField.style.marginRight = 0;
 			m_TitleField.style.marginTop = 0;
 			m_TitleField.style.marginBottom = 0;
-			m_TitleField.style.textAlignment = TextAnchor.MiddleLeft;
+			m_TitleField.style.unityTextAlign = TextAnchor.MiddleLeft;
 
 			m_TitleLabel.visible = false;
 
@@ -223,8 +221,8 @@ namespace NodeEditor.Scripts.Views
 			// space of the settings view's parent.
 
 			var settingsButtonLayout = m_SettingsButton.ChangeCoordinatesTo(m_NodeSettingsView.parent, m_SettingsButton.layout);
-			m_NodeSettingsView.style.positionTop = settingsButtonLayout.yMax - 18f;
-			m_NodeSettingsView.style.positionLeft = settingsButtonLayout.xMin - 16f;
+			m_NodeSettingsView.style.top = settingsButtonLayout.yMax - 18f;
+			m_NodeSettingsView.style.left = settingsButtonLayout.xMin - 16f;
 		}
 
 		/*void OnSubGraphDoubleClick(MouseDownEvent evt)
@@ -316,17 +314,23 @@ namespace NodeEditor.Scripts.Views
 						inputContainer.Remove(port);
 
 						// We also need to remove the inline input
-						var portInputView = m_PortInputContainer.OfType<PortInputView>().FirstOrDefault(v => Equals(v.slot, port.slot));
-						if (portInputView != null)
-							portInputView.RemoveFromHierarchy();
-					}
+						var portInputView = m_PortInputContainer.Children().OfType<PortInputView>().FirstOrDefault(v => Equals(v.slot, port.slot));
+                        portInputView?.RemoveFromHierarchy();
+                    }
 					else
 					{
 						port.slot = newSlot;
-						var portInputView = m_PortInputContainer.OfType<PortInputView>().FirstOrDefault(x => x.slot.id == currentSlot.id);
-						portInputView.UpdateSlot(newSlot);
+						var portInputView = m_PortInputContainer.Children().OfType<PortInputView>().FirstOrDefault(x => x.slot.id == currentSlot.id);
+                        if (newSlot.isConnected)
+                        {
+                            portInputView?.RemoveFromHierarchy();
+                        }
+                        else
+                        {
+                            portInputView?.UpdateSlot(newSlot);
+                        }
 
-						slots.Remove(newSlot);
+                        slots.Remove(newSlot);
 					}
 				}
 
@@ -365,11 +369,9 @@ namespace NodeEditor.Scripts.Views
 			UpdatePortInputs();
 			UpdatePortInputVisibilities();
 
-			foreach (var control in m_ControlItems)
+			foreach (var control in m_ControlItems.Children().OfType<INodeModificationListener>())
 			{
-				var listener = control as INodeModificationListener;
-				if (listener != null)
-					listener.OnNodeModified(scope);
+                control.OnNodeModified(scope);
 			}
 		}
 
@@ -400,71 +402,92 @@ namespace NodeEditor.Scripts.Views
 
 		void UpdatePortInputs()
 		{
-			foreach (var port in inputContainer.OfType<NodePort>())
+			foreach (var port in inputContainer.Children().OfType<NodePort>())
 			{
-				if (!m_PortInputContainer.OfType<PortInputView>().Any(a => Equals(a.slot, port.slot)))
-				{
-					var portInputView = new PortInputView(port.slot)
-					{
-						style =
-						{
-							positionType = PositionType.Absolute
-						}
-					};
-					m_PortInputContainer.Add(portInputView);
-					port.RegisterCallback<GeometryChangedEvent>(evt => UpdatePortInput((NodePort)evt.target));
-				}
-			}
+                if (port.slot.isConnected)
+                {
+                    continue;
+                }
+
+                var portInputView = m_PortInputContainer.Children().OfType<PortInputView>().FirstOrDefault(a => Equals(a.slot, port.slot));
+                if (portInputView == null)
+                {
+                    portInputView = new PortInputView(port.slot) { style = { position = Position.Absolute } };
+                    m_PortInputContainer.Add(portInputView);
+                    SetPortInputPosition(port, portInputView);
+                }
+
+                port.RegisterCallback<GeometryChangedEvent>(UpdatePortInput);
+            }
 		}
 
-		void UpdatePortInput(NodePort port)
+        void UpdatePortInput(GeometryChangedEvent evt)
 		{
-			var inputView = m_PortInputContainer.OfType<PortInputView>().First(x => Equals(x.slot, port.slot));
+            var port = (NodePort)evt.target;
+            var inputViews = m_PortInputContainer.Children().OfType<PortInputView>().Where(x => Equals(x.slot, port.slot));
 
-			var currentRect = new Rect(inputView.style.positionLeft, inputView.style.positionTop, inputView.style.width, inputView.style.height);
+            // Ensure PortInputViews are initialized correctly
+            // Dynamic port lists require one update to validate before init
+            if (inputViews.Count() != 0)
+            {
+                var inputView = inputViews.First();
+                SetPortInputPosition(port, inputView);
+            }
+
+            port.UnregisterCallback<GeometryChangedEvent>(UpdatePortInput);
+
+            /*
+             var inputView = m_PortInputContainer.Children().OfType<PortInputView>().First(x => Equals(x.slot, port.slot));
+
+			var currentRect = new Rect(inputView.style.left.value.value, inputView.style.top.value.value, inputView.style.width.value.value, inputView.style.height.value.value);
 			var targetRect = new Rect(0.0f, 0.0f, port.layout.width, port.layout.height);
-			targetRect = port.ChangeCoordinatesTo(inputView.shadow.parent, targetRect);
+			targetRect = port.ChangeCoordinatesTo(inputView.hierarchy.parent, targetRect);
 			var centerY = targetRect.center.y;
 			var centerX = targetRect.xMax - currentRect.width;
 			currentRect.center = new Vector2(centerX, centerY);
 
-			inputView.style.positionTop = currentRect.yMin;
+			inputView.style.top = currentRect.yMin;
 			var newHeight = inputView.parent.layout.height;
 			foreach (var element in inputView.parent.Children())
-				newHeight = Mathf.Max(newHeight, element.style.positionTop + element.layout.height);
-			if (Math.Abs(inputView.parent.style.height - newHeight) > 1e-3)
+				newHeight = Mathf.Max(newHeight, element.style.top.value.value + element.layout.height);
+			if (Math.Abs(inputView.parent.style.height.value.value - newHeight) > 1e-3)
 				inputView.parent.style.height = newHeight;
-		}
+             */
+        }
 
-		public void UpdatePortInputVisibilities()
+        void SetPortInputPosition(NodePort port, PortInputView inputView)
+        {
+            inputView.style.top = port.layout.y;
+            inputView.parent.style.height = inputContainer.layout.height;
+        }
+
+        public void UpdatePortInputVisibilities()
 		{
-			foreach (var portInputView in m_PortInputContainer.OfType<PortInputView>())
-			{
-				var slot = portInputView.slot;
-				var oldVisibility = portInputView.visible;
-				portInputView.visible = expanded && !node.owner.GetEdges(node.GetSlotReference(slot.id)).Any();
-				if (portInputView.visible != oldVisibility)
-					m_PortInputContainer.Dirty(ChangeType.Repaint);
-			}
-		}
+            if (expanded)
+            {
+                m_PortInputContainer.style.display = StyleKeyword.Null;
+            }
+            else
+            {
+                m_PortInputContainer.style.display = DisplayStyle.None;
+            }
+        }
 
 		public void UpdatePortInputTypes()
 		{
-			foreach (var anchor in inputContainer.Concat(outputContainer).OfType<NodePort>())
+			foreach (var anchor in inputContainer.Children().Concat(outputContainer.Children()).OfType<NodePort>())
 			{
 				var slot = anchor.slot;
 				anchor.portName = slot.displayName;
 				anchor.visualClass = slot.valueType.Type.Name;
 			}
 
-			foreach (var portInputView in m_PortInputContainer.OfType<PortInputView>())
+			foreach (var portInputView in m_PortInputContainer.Children().OfType<PortInputView>())
 				portInputView.UpdateSlotType();
 
-			foreach (var control in m_ControlItems)
+			foreach (var control in m_ControlItems.Children().OfType<INodeModificationListener>())
 			{
-				var listener = control as INodeModificationListener;
-				if (listener != null)
-					listener.OnNodeModified(ModificationScope.Graph);
+                control.OnNodeModified(ModificationScope.Graph);
 			}
 		}
 
@@ -480,7 +503,7 @@ namespace NodeEditor.Scripts.Views
 
 		public void Dispose()
 		{
-			foreach (var portInputView in m_PortInputContainer.OfType<PortInputView>())
+			foreach (var portInputView in m_PortInputContainer.Children().OfType<PortInputView>())
 				portInputView.Dispose();
 
 			node = null;

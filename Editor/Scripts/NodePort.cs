@@ -1,6 +1,7 @@
 ﻿using System;
-using UnityEditor.Experimental.UIElements.GraphView;
-using UnityEngine.Experimental.UIElements;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Scripts
 {
@@ -9,7 +10,7 @@ namespace NodeEditor.Scripts
 		NodePort(Orientation portOrientation, Direction portDirection, Capacity portCapacity, Type type)
 			: base(portOrientation, portDirection, portCapacity, type)
 		{
-			AddStyleSheetPath("Styles/NodePort");
+			styleSheets.Add(Resources.Load<StyleSheet>("Styles/NodePort"));
 		}
 
 		NodeSlot m_Slot;
@@ -19,7 +20,7 @@ namespace NodeEditor.Scripts
 			var port = new NodePort(Orientation.Horizontal, slot.isInputSlot ? Direction.Input : Direction.Output,
 				slot.isInputSlot || slot.allowMultipleConnections ? Capacity.Single : Capacity.Multi, null)
 			{
-				m_EdgeConnector = new EdgeConnector<UnityEditor.Experimental.UIElements.GraphView.Edge>(connectorListener),
+				m_EdgeConnector = new EdgeConnector<UnityEditor.Experimental.GraphView.Edge>(connectorListener),
 			};
 			port.AddManipulator(port.m_EdgeConnector);
 			port.slot = slot;
@@ -31,8 +32,8 @@ namespace NodeEditor.Scripts
 
 		public NodeSlot slot
 		{
-			get { return m_Slot; }
-			set
+			get => m_Slot;
+            set
 			{
 				if (ReferenceEquals(value, m_Slot))
 					return;
@@ -51,8 +52,7 @@ namespace NodeEditor.Scripts
 	{
 		public static NodeSlot GetSlot(this Port port)
 		{
-			var shaderPort = port as NodePort;
-			return shaderPort != null ? shaderPort.slot : null;
+            return port is NodePort shaderPort ? shaderPort.slot : null;
 		}
 	}
 }

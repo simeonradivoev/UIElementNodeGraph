@@ -15,7 +15,7 @@ namespace NodeEditor
 
 		public int Count => collection?.Count ?? 0;
 
-		public T this[int index] => collection != null ? collection[index] : default(T);
+		public T this[int index] => collection != null ? collection[index] : default;
 
 		public T First()
 		{
@@ -26,7 +26,7 @@ namespace NodeEditor
 		{
 			if(collection != null && collection.Count > 0)
 				return collection[0];
-			return default(T);
+			return default;
 		}
 
 		public bool Any()

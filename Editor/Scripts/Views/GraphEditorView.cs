@@ -5,11 +5,11 @@ using NodeEditor.Scripts;
 using NodeEditor.Scripts.Views;
 using NodeEditor.Util;
 using UnityEditor;
-using UnityEditor.Experimental.UIElements;
-using UnityEditor.Experimental.UIElements.GraphView;
+using UnityEditor.UIElements;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
-using GEdge = UnityEditor.Experimental.UIElements.GraphView.Edge;
+using UnityEngine.UIElements;
+using GEdge = UnityEditor.Experimental.GraphView.Edge;
 using Object = UnityEngine.Object;
 
 namespace NodeEditor.Editor.Scripts.Views
@@ -53,7 +53,7 @@ namespace NodeEditor.Editor.Scripts.Views
 		public GraphEditorView(EditorWindow editorWindow, AbstractNodeGraph graph)
 		{
 			m_Graph = graph;
-			AddStyleSheetPath("Styles/GraphEditorView");
+			styleSheets.Add(Resources.Load<StyleSheet>("Styles/GraphEditorView"));
 
 			string serializedWindowLayout = EditorUserSettings.GetConfigValue(k_FloatingWindowsLayoutKey);
 			if (!string.IsNullOrEmpty(serializedWindowLayout))
@@ -83,7 +83,7 @@ namespace NodeEditor.Editor.Scripts.Views
 
 			var content = new VisualElement { name = "content" };
 			{
-				m_GraphView = new NodeGraphView(m_Graph) { name = "GraphView", persistenceKey = "NodeGraphView" };
+				m_GraphView = new NodeGraphView(m_Graph) { name = "GraphView", viewDataKey = "NodeGraphView" };
 				m_GraphView.SetupZoom(0.05f, ContentZoomer.DefaultMaxScale);
 				m_GraphView.AddManipulator(new ContentDragger());
 				m_GraphView.AddManipulator(new SelectionDragger());
@@ -94,10 +94,11 @@ namespace NodeEditor.Editor.Scripts.Views
 
 				m_BlackboardProvider = new BlackboardProvider(graph);
 				m_GraphView.Add(m_BlackboardProvider.blackboard);
+
 				Rect blackboardLayout = m_BlackboardProvider.blackboard.layout;
 				blackboardLayout.x = 10f;
 				blackboardLayout.y = 10f;
-				m_BlackboardProvider.blackboard.layout = blackboardLayout;
+				m_BlackboardProvider.blackboard.SetPosition(blackboardLayout);
 
 				m_GraphView.graphViewChanged = GraphViewChanged;
 
@@ -129,12 +130,12 @@ namespace NodeEditor.Editor.Scripts.Views
 			m_GraphView.AddElement(nodeView);
 			nodeView.Initialize(node as AbstractNode, m_EdgeConnectorListener);
 			node.RegisterCallback(OnNodeChanged);
-			nodeView.Dirty(ChangeType.Repaint);
+			nodeView.MarkDirtyRepaint();
 
 			if (m_SearchWindowProvider.nodeNeedsRepositioning && m_SearchWindowProvider.targetSlotReference.nodeGuid.Equals(node.guid))
 			{
 				m_SearchWindowProvider.nodeNeedsRepositioning = false;
-				foreach (var element in nodeView.inputContainer.Union(nodeView.outputContainer))
+				foreach (var element in nodeView.inputContainer.Children().Union(nodeView.outputContainer.Children()))
 				{
 					var port = element as NodePort;
 					if (port == null)
@@ -227,8 +228,8 @@ namespace NodeEditor.Editor.Scripts.Views
 			var drawState = nodeView.node.drawState;
 			drawState.position = position;
 			nodeView.node.drawState = drawState;
-			nodeView.Dirty(ChangeType.Repaint);
-			port.Dirty(ChangeType.Repaint);
+			nodeView.MarkDirtyRepaint();
+			port.MarkDirtyRepaint();
 		}
 
 		GraphViewChange GraphViewChanged(GraphViewChange graphViewChange)
@@ -274,23 +275,23 @@ namespace NodeEditor.Editor.Scripts.Views
 				{
 					if (edge.input != null)
 					{
-						var nodeView = edge.input.node as NodeView;
-						if (nodeView != null && m_Graph.ContainsNodeGuid(nodeView.node.guid))
+                        if (edge.input.node is NodeView nodeView && m_Graph.ContainsNodeGuid(nodeView.node.guid))
 							nodesToUpdate.Add(nodeView);
 					}
 					if (edge.output != null)
 					{
-						var nodeView = edge.output.node as NodeView;
-						if (nodeView != null && m_Graph.ContainsNodeGuid(nodeView.node.guid))
+                        if (edge.output.node is NodeView nodeView && m_Graph.ContainsNodeGuid(nodeView.node.guid))
 							nodesToUpdate.Add(nodeView);
 					}
 				}
 			}
 
-			foreach (var node in nodesToUpdate)
-				node.UpdatePortInputVisibilities();
+            foreach (var node in nodesToUpdate)
+            {
+                node.OnModified(ModificationScope.Topological);
+            }
 
-			UpdateEdgeColors(nodesToUpdate);
+            UpdateEdgeColors(nodesToUpdate);
 
 			return graphViewChange;
 		}
@@ -338,8 +339,8 @@ namespace NodeEditor.Editor.Scripts.Views
 
 		void HandleEditorViewChanged(GeometryChangedEvent evt)
 		{
-			m_BlackboardProvider.blackboard.layout = m_FloatingWindowsLayout.blackboardLayout.GetLayout(m_GraphView.layout);
-		}
+            m_BlackboardProvider.blackboard.SetPosition(m_FloatingWindowsLayout.blackboardLayout.GetLayout(m_GraphView.layout));
+        }
 
 		public void HandleGraphChanges()
 		{
@@ -398,10 +399,13 @@ namespace NodeEditor.Editor.Scripts.Views
 					nodesToUpdate.Add((NodeView)edgeView.input.node);
 			}
 
-			foreach (var node in nodesToUpdate)
-				node.UpdatePortInputVisibilities();
+            foreach (var node in nodesToUpdate)
+            {
+                node.OnModified(ModificationScope.Topological);
+                node.UpdatePortInputVisibilities();
+            }
 
-			UpdateEdgeColors(nodesToUpdate);
+            UpdateEdgeColors(nodesToUpdate);
 		}
 
 		void OnSpaceDown(KeyDownEvent evt)
@@ -441,7 +445,7 @@ namespace NodeEditor.Editor.Scripts.Views
 				blackboardRect.y = Mathf.Clamp(blackboardRect.y, 0f, Mathf.Max(1f, m_GraphView.contentContainer.layout.height - blackboardRect.height - blackboardRect.height));
 
 				// Set the processed blackboard layout.
-				m_BlackboardProvider.blackboard.layout = blackboardRect;
+				m_BlackboardProvider.blackboard.SetPosition(blackboardRect);
 			}
 			else
 			{

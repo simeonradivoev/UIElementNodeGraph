@@ -22,15 +22,15 @@ namespace NodeEditor
 
 		public T value
 		{
-			get { return m_Value; }
-			set { m_Value = value; }
-		}
+			get => m_Value;
+            set => m_Value = value;
+        }
 
 		public string reference
 		{
-			get { return m_Reference; }
-			set { m_Reference = value; }
-		}
+			get => m_Reference;
+            set => m_Reference = value;
+        }
 
 		public string displayName
 		{
@@ -40,8 +40,8 @@ namespace NodeEditor
 					return guid.ToString();
 				return m_Name;
 			}
-			set { m_Name = value; }
-		}
+			set => m_Name = value;
+        }
 
 		string m_DefaultReferenceName;
 
@@ -52,7 +52,7 @@ namespace NodeEditor
 				if (string.IsNullOrEmpty(overrideReferenceName))
 				{
 					if (string.IsNullOrEmpty(m_DefaultReferenceName))
-						m_DefaultReferenceName = string.Format("{0}_{1}", propertyType, GuidEncoder.Encode(guid));
+						m_DefaultReferenceName = $"{propertyType}_{GuidEncoder.Encode(guid)}";
 					return m_DefaultReferenceName;
 				}
 				return overrideReferenceName;
@@ -64,9 +64,9 @@ namespace NodeEditor
 
 		public string overrideReferenceName
 		{
-			get { return m_OverrideReferenceName; }
-			set { m_OverrideReferenceName = value; }
-		}
+			get => m_OverrideReferenceName;
+            set => m_OverrideReferenceName = value;
+        }
 
 		public abstract SerializedType propertyType { get; }
 
@@ -74,9 +74,9 @@ namespace NodeEditor
 
 		public bool exposed
 		{
-			get { return m_Exposed;}
-			set { m_Exposed = value; }
-		}
+			get => m_Exposed;
+            set => m_Exposed = value;
+        }
 
 		public abstract object defaultValue { get; }
 		public abstract PreviewProperty GetPreviewNodeProperty();

@@ -3,9 +3,9 @@ using System.Linq;
 using NodeEditor.Nodes;
 using NodeEditor.Util;
 using UnityEditor;
-using UnityEditor.Experimental.UIElements.GraphView;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Scripts.Views
 {
@@ -16,7 +16,7 @@ namespace NodeEditor.Scripts.Views
 		public NodeGraphView(AbstractNodeGraph graph)
 		{
 			this.graph = graph;
-			AddStyleSheetPath("Styles/NodeGraphView");
+			styleSheets.Add(Resources.Load<StyleSheet>("Styles/NodeGraphView"));
 			serializeGraphElements = SerializeGraphElementsImplementation;
 			canPasteSerializedData = CanPasteSerializedDataImplementation;
 			unserializeAndPaste = UnserializeAndPasteImplementation;
@@ -56,36 +56,36 @@ namespace NodeEditor.Scripts.Views
 			}
 			else if (evt.target is BlackboardField)
 			{
-				evt.menu.AppendAction("Delete", (e) => DeleteSelectionImplementation("Delete", AskUser.DontAskUser), (e) => canDeleteSelection ? ContextualMenu.MenuAction.StatusFlags.Normal : ContextualMenu.MenuAction.StatusFlags.Disabled);
+				evt.menu.AppendAction("Delete", (e) => DeleteSelectionImplementation("Delete", AskUser.DontAskUser), (e) => canDeleteSelection ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
 			}
 		}
 
-		void SeeDocumentation(ContextualMenu.MenuAction action)
+		void SeeDocumentation(DropdownMenuAction action)
 		{
 			var node = selection.OfType<NodeView>().First().node;
 			if (node.documentationURL != null)
 				System.Diagnostics.Process.Start(node.documentationURL);
 		}
 
-		ContextualMenu.MenuAction.StatusFlags SeeDocumentationStatus(ContextualMenu.MenuAction action)
+        DropdownMenuAction.Status SeeDocumentationStatus(DropdownMenuAction action)
 		{
 			if (selection.OfType<NodeView>().First().node.documentationURL == null)
-				return ContextualMenu.MenuAction.StatusFlags.Disabled;
-			return ContextualMenu.MenuAction.StatusFlags.Normal;
+				return DropdownMenuAction.Status.Disabled;
+			return DropdownMenuAction.Status.Normal;
 		}
 
-		ContextualMenu.MenuAction.StatusFlags ConvertToPropertyStatus(ContextualMenu.MenuAction action)
+        DropdownMenuAction.Status ConvertToPropertyStatus(DropdownMenuAction action)
 		{
 			if (selection.OfType<NodeView>().Any(v => v.node != null))
 			{
 				if (selection.OfType<NodeView>().Any(v => v.node is IPropertyFromNode))
-					return ContextualMenu.MenuAction.StatusFlags.Normal;
-				return ContextualMenu.MenuAction.StatusFlags.Disabled;
+					return DropdownMenuAction.Status.Normal;
+				return DropdownMenuAction.Status.Disabled;
 			}
-			return ContextualMenu.MenuAction.StatusFlags.Hidden;
+			return DropdownMenuAction.Status.Hidden;
 		}
 
-		void ConvertToProperty(ContextualMenu.MenuAction action)
+		void ConvertToProperty(DropdownMenuAction action)
 		{
 			var selectedNodeViews = selection.OfType<NodeView>().Select(x => x.node).ToList();
 			foreach (var node in selectedNodeViews)
@@ -115,7 +115,7 @@ namespace NodeEditor.Scripts.Views
 		string SerializeGraphElementsImplementation(IEnumerable<GraphElement> elements)
 		{
 			var nodes = elements.OfType<NodeView>().Select(x => (INode) x.node);
-			var edges = elements.OfType<UnityEditor.Experimental.UIElements.GraphView.Edge>().Select(x => x.userData).OfType<IEdge>();
+			var edges = elements.OfType<UnityEditor.Experimental.GraphView.Edge>().Select(x => x.userData).OfType<IEdge>();
 			var properties = selection.OfType<BlackboardField>().Select(x => x.userData as INodeProperty);
 
 			// Collect the property nodes and get the corresponding properties
@@ -318,12 +318,10 @@ namespace NodeEditor.Scripts.Views
 					graphView.ClearSelection();
 					graphView.graphElements.ForEach(element =>
 					{
-						var edge = element as UnityEditor.Experimental.UIElements.GraphView.Edge;
-						if (edge != null && remappedEdges.Contains(edge.userData as IEdge))
+                        if (element is UnityEditor.Experimental.GraphView.Edge edge && remappedEdges.Contains(edge.userData as IEdge))
 							graphView.AddToSelection(edge);
 
-						var nodeView = element as NodeView;
-						if (nodeView != null && remappedNodes.Contains(nodeView.node))
+                        if (element is NodeView nodeView && remappedNodes.Contains(nodeView.node))
 							graphView.AddToSelection(nodeView);
 					});
 				}

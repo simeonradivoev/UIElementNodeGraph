@@ -1,9 +1,9 @@
 using System;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.Experimental.UIElements;
+using UnityEditor.UIElements;
 #endif
 
 namespace NodeEditor.Controls.Views
@@ -17,7 +17,7 @@ namespace NodeEditor.Controls.Views
 
         public MultiFloatSlotControlView(INode node, string[] labels, Func<Vector4> get, Action<Vector4> set)
         {
-            AddStyleSheetPath("Styles/Controls/MultiFloatSlotControlView");
+            styleSheets.Add(Resources.Load<StyleSheet>("Styles/Controls/MultiFloatSlotControlView"));
             m_Node = node;
             m_Get = get;
             m_Set = set;
@@ -36,7 +36,7 @@ namespace NodeEditor.Controls.Views
             var field = new FloatField { userData = index, value = initialValue[index] };
             var dragger = new FieldMouseDragger<float>(field);
             dragger.SetDragZone(label);
-            field.OnValueChanged(evt =>
+            field.RegisterValueChangedCallback(evt =>
                 {
                     var value = m_Get();
                     value[index] = (float)evt.newValue;
@@ -51,8 +51,8 @@ namespace NodeEditor.Controls.Views
                         m_UndoGroup = Undo.GetCurrentGroup();
                         m_Node.owner.owner.RegisterCompleteObjectUndo("Change " + m_Node.name);
                     }
-                    float newValue;
-                    if (!float.TryParse(evt.newData, out newValue))
+
+                    if (!float.TryParse(evt.newData, out var newValue))
                         newValue = 0f;
                     var value = m_Get();
                     if (Math.Abs(value[index] - newValue) > 1e-9)
@@ -70,7 +70,7 @@ namespace NodeEditor.Controls.Views
                         m_UndoGroup = -1;
                         evt.StopPropagation();
                     }
-                    Dirty(ChangeType.Repaint);
+                    MarkDirtyRepaint();
                 });
             Add(field);
 #endif

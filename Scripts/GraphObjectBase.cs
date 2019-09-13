@@ -12,8 +12,8 @@ namespace NodeEditor
 
 		public IGraph graph
 		{
-			get { return m_Graph; }
-			set
+			get => m_Graph;
+            set
 			{
 				if (m_Graph != null)
 				{
@@ -54,12 +54,9 @@ namespace NodeEditor
 			
 		}
 
-		public virtual bool isDirty
-		{
-			get { return false; }
-		}
+		public virtual bool isDirty => false;
 
-		void ValidateInternal()
+        void ValidateInternal()
 		{
 			if (graph != null)
 			{

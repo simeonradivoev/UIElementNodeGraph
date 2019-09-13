@@ -10,9 +10,9 @@
 
 		public T value
 		{
-			get { return m_DefaultValue;}
-			private set { m_DefaultValue = value; }
-		}
+			get => m_DefaultValue;
+            private set => m_DefaultValue = value;
+        }
 
 		public DefaultValueSlot<T> SetDefaultValue(T val)
 		{

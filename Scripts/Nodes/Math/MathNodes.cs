@@ -65,7 +65,9 @@ namespace NodeEditor.Nodes.Math
 	public class Lerp : MethodNode<float,float,float, float>
 	{
 		[SerializeField] private bool m_Clamped = true;
-		[DefaultControl(label = "Clamped")] public bool clamped { get { return m_Clamped;} set {m_Clamped = value;}}
+		[DefaultControl(label = "Clamped")] public bool clamped { get => m_Clamped;
+            set => m_Clamped = value;
+        }
 		public Lerp() : base("x","y","t", "Out") { }
 		protected sealed override float Execute(float x,float y,float t) => m_Clamped ? Mathf.Lerp(x,y,t) : Mathf.LerpUnclamped(x,y,t);
 	}

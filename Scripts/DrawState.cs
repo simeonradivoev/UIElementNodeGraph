@@ -14,14 +14,14 @@ namespace NodeEditor
 
 		public bool expanded
 		{
-			get { return m_Expanded; }
-			set { m_Expanded = value; }
-		}
+			get => m_Expanded;
+            set => m_Expanded = value;
+        }
 
 		public Rect position
 		{
-			get { return m_Position; }
-			set { m_Position = value; }
-		}
+			get => m_Position;
+            set => m_Position = value;
+        }
 	}
 }

@@ -2,9 +2,9 @@
 using NodeEditor.Nodes;
 #if UNITY_EDITOR
 using UnityEditor;
-using UnityEditor.Experimental.UIElements;
+using UnityEditor.UIElements;
 #endif
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Controls.Views
 {
@@ -25,10 +25,9 @@ namespace NodeEditor.Controls.Views
 					var objectField = new ObjectField();
 					var propertyTable = node.owner.owner as IReferenceTable;
 					var graphUnityObject = node.owner.owner as UnityEngine.Object;
-					bool isValid;
-					objectField.objectType = referenceType;
-					objectField.value = propertyTable != null ? propertyTable.GetReferenceValue(guid, out isValid) : null;
-					objectField.OnValueChanged(e =>
+                    objectField.objectType = referenceType;
+					objectField.value = propertyTable != null ? propertyTable.GetReferenceValue(guid, out var isValid) : null;
+					objectField.RegisterValueChangedCallback(e =>
 					{
 						if (propertyTable != null)
 						{

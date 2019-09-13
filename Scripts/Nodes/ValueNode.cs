@@ -19,8 +19,8 @@ namespace NodeEditor.Nodes
 		[DefaultControl]
 		public T value
 		{
-			get { return m_Output.value; }
-			set
+			get => m_Output.value;
+            set
 			{
 				m_Output.value = value;
 				Dirty(ModificationScope.Node);

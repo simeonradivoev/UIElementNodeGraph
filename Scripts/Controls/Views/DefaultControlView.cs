@@ -1,5 +1,6 @@
-﻿using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+﻿using UnityEditor.UIElements;
+using UnityEngine;
+using UnityEngine.UIElements;
 #if UNITY_EDITOR
 using UnityEditor.Experimental.UIElements;
 #endif
@@ -24,10 +25,10 @@ namespace NodeEditor.Controls.Views
 			{
 				var toggle = new Toggle() { name = ValueFieldName };
 				toggle.value = (bool)property.GetValue(node);
-				toggle.OnToggle(() =>
+				toggle.RegisterValueChangedCallback((e) =>
 				{
 					node.owner.owner.RegisterCompleteObjectUndo("Boolean Change");
-					property.SetValue(node, toggle.value);
+					property.SetValue(node, e.newValue);
 					node.Dirty(ModificationScope.Node);
 				});
 				viewCont.Add(toggle);
@@ -51,10 +52,10 @@ namespace NodeEditor.Controls.Views
 			if(viewCont.childCount > 0) Add(viewCont);
 		}
 
-		private BaseTextControl<T> AddControl<T>(AbstractNode node, BaseTextControl<T> field, ReflectionProperty property)
+		private TextInputBaseField<T> AddControl<T>(AbstractNode node, TextInputBaseField<T> field, ReflectionProperty property)
 		{
 			field.value = (T)property.GetValue(node);
-			field.OnValueChanged(e =>
+			field.RegisterValueChangedCallback(e =>
 			{
 				node.owner.owner.RegisterCompleteObjectUndo(typeof(T).Name + " Change");
 				property.SetValue(node,e.newValue);
@@ -63,10 +64,10 @@ namespace NodeEditor.Controls.Views
 			return field;
 		}
 
-		private BaseControl<T> AddControl<T>(AbstractNode node, BaseControl<T> field, ReflectionProperty property)
+		private BaseField<T> AddControl<T>(AbstractNode node, BaseField<T> field, ReflectionProperty property)
 		{
 			field.value = (T)property.GetValue(node);
-			field.OnValueChanged(e =>
+			field.RegisterValueChangedCallback(e =>
 			{
 				node.owner.owner.RegisterCompleteObjectUndo(typeof(T).Name + " Change");
 				property.SetValue(node, e.newValue);

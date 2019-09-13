@@ -28,7 +28,7 @@ namespace NodeEditor.Util
 
             var toPrint = missingSlots.Select(x => x.ToString());
 
-            throw new SlotConfigurationException(string.Format("Missing slots {0} on node {1}", string.Join(", ", toPrint.ToArray()), node));
+            throw new SlotConfigurationException($"Missing slots {string.Join(", ", toPrint.ToArray())} on node {node}");
         }
 
         public static IEnumerable<IEdge> GetAllEdges(INode node)
@@ -86,8 +86,7 @@ namespace NodeEditor.Util
             {
                 foreach (var edge in node.owner.GetEdges(node.GetSlotReference(slot)))
                 {
-                    var outputNode = node.owner.GetNodeFromGuid(edge.outputSlot.nodeGuid) as T;
-                    if (outputNode != null)
+                    if (node.owner.GetNodeFromGuid(edge.outputSlot.nodeGuid) is T outputNode)
                         DepthFirstCollectNodesFromNode(nodeList, outputNode);
                 }
             }

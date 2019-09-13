@@ -13,8 +13,8 @@ namespace NodeEditor.Nodes
 		[DefaultControl]
 		public string propertyReferenceName
 		{
-			get { return m_PropertyReferenceName; }
-			set
+			get => m_PropertyReferenceName;
+            set
 			{
 				m_PropertyReferenceName = value;
 				m_PropertyReference = StringToGUID.Get(m_PropertyReferenceName);
@@ -29,8 +29,7 @@ namespace NodeEditor.Nodes
 
 		private T GetValue()
 		{
-			T val;
-			GlobalProperties<T>.TryGetValue(m_PropertyReference, out val);
+            GlobalProperties<T>.TryGetValue(m_PropertyReference, out var val);
 			return val;
 		}
 

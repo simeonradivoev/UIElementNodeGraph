@@ -89,7 +89,7 @@ namespace NodeEditor
 			if (baseMatch.Success)
 				name = baseMatch.Groups[1].Value;
 
-			string baseNameExpression = string.Format(@"^{0}", Regex.Escape(name));
+			string baseNameExpression = $@"^{Regex.Escape(name)}";
 			var regex = new Regex(string.Format(escapedDuplicateFormat, baseNameExpression, @"(\d+)") + "$");
 
 			var existingDuplicateNumbers = existingNames.Select(existingName => regex.Match(existingName)).Where(m => m.Success).Select(m => int.Parse(m.Groups[1].Value)).Where(n => n > 0).Distinct().ToList();

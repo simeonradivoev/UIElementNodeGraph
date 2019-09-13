@@ -2,7 +2,7 @@
 using System.Linq;
 using NodeEditor.Controls.Views;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 
 namespace NodeEditor
 {
@@ -39,9 +39,9 @@ namespace NodeEditor
 
 		public T value
 		{
-			get { return m_Value; }
-			set { m_Value = value; }
-		}
+			get => m_Value;
+            set => m_Value = value;
+        }
 
 		void IValueSetter<T>.SetValue(T val)
 		{

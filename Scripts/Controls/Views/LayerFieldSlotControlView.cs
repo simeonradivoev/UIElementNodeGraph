@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using NodeEditor.Slots;
 #if UNITY_EDITOR
-using UnityEditor.Experimental.UIElements;
+using UnityEditor.UIElements;
 #endif
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Controls.Views
 {
@@ -23,7 +23,7 @@ namespace NodeEditor.Controls.Views
 				}
 			}
 			var layerField = new PopupField<KeyValuePair<int,string>>(options, options.FindIndex(p => p.Key == slot.value));
-			layerField.OnValueChanged(e => { slot.value = e.newValue.Key; });
+			layerField.RegisterValueChangedCallback(e => { slot.value = e.newValue.Key; });
 			Add(layerField);
 #endif
 		}

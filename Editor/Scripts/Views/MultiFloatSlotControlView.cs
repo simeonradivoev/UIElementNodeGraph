@@ -1,8 +1,8 @@
 using System;
 using UnityEditor;
-using UnityEditor.Experimental.UIElements;
+using UnityEditor.UIElements;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Scripts.Views
 {
@@ -15,7 +15,7 @@ namespace NodeEditor.Scripts.Views
 
         public MultiFloatSlotControlView(INode node, string[] labels, Func<Vector4> get, Action<Vector4> set)
         {
-            AddStyleSheetPath("Styles/Controls/MultiFloatSlotControlView");
+            styleSheets.Add(Resources.Load<StyleSheet>("Styles/Controls/MultiFloatSlotControlView"));
             m_Node = node;
             m_Get = get;
             m_Set = set;
@@ -33,7 +33,7 @@ namespace NodeEditor.Scripts.Views
             var field = new FloatField { userData = index, value = initialValue[index] };
             var dragger = new FieldMouseDragger<float>(field);
             dragger.SetDragZone(label);
-            field.OnValueChanged(evt =>
+            field.RegisterValueChangedCallback(evt =>
                 {
                     var value = m_Get();
                     value[index] = (float)evt.newValue;
@@ -67,7 +67,7 @@ namespace NodeEditor.Scripts.Views
                         m_UndoGroup = -1;
                         evt.StopPropagation();
                     }
-                    Dirty(ChangeType.Repaint);
+                    MarkDirtyRepaint();
                 });
             Add(field);
         }

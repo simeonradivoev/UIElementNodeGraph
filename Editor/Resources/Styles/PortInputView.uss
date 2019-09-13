@@ -49,7 +49,7 @@ PortInputView > #edge {
 PortInputView > #container > #slot > #dot {
     width: 4;
     height: 4;
-    background-color: #ffffff;
+    background-color: #ff0000;
     border-radius: 4;
 }
 

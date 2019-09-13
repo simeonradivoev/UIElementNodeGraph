@@ -13,7 +13,7 @@ namespace NodeEditor
 		public virtual void OnBeforeSerialize()
 		{
 			if (graph != null)
-				m_SerializedGraph = SerializationHelper.Serialize(graph,false);
+				m_SerializedGraph = SerializationHelper.Serialize(graph);
 		}
 
 		public virtual void OnAfterDeserialize()

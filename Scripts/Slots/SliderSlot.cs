@@ -1,6 +1,6 @@
 ﻿using NodeEditor.Controls.Views;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Slots
 {
@@ -18,9 +18,9 @@ namespace NodeEditor.Slots
 
 		public float value
 		{
-			get { return m_Value; }
-			set { m_Value = value; }
-		}
+			get => m_Value;
+            set => m_Value = value;
+        }
 
 		public SliderSlot SetRange(float min, float max)
 		{

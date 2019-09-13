@@ -6,7 +6,7 @@ using NodeEditor.Editor.Scripts.Views;
 using UnityEditor;
 using UnityEditor.Experimental.UIElements;
 using UnityEngine;
-using UnityEngine.Experimental.UIElements;
+using UnityEngine.UIElements;
 
 namespace NodeEditor.Editor.Scripts
 {
@@ -39,7 +39,7 @@ namespace NodeEditor.Editor.Scripts
 				{
 					m_GraphEditorView.saveRequested += UpdateAsset;
 					m_GraphEditorView.showInProjectRequested += PingAsset;
-					this.GetRootVisualContainer().Add(graphEditorView);
+					this.rootVisualElement.Add(graphEditorView);
 				}
 			}
 		}
@@ -145,7 +145,13 @@ namespace NodeEditor.Editor.Scripts
 					if(asset is TmpGraphObject) Debug.LogError("TmpGraphObject is only used in editor");
 					graphObject = (GraphObjectBase)asset;
 					graphType = typeof(NodeGraph);
-				}
+
+                    if (graphObject.graph == null)
+                    {
+                        graphObject.graph = Activator.CreateInstance(graphType) as IGraph;
+                        graphObject.graph.OnEnable();
+                    }
+                }
 				else
 				{
 					var path = AssetDatabase.GetAssetPath(asset);
@@ -164,15 +170,15 @@ namespace NodeEditor.Editor.Scripts
 					graphObject = CreateInstance<TmpGraphObject>();
 					graphObject.hideFlags = HideFlags.HideAndDontSave;
 					graphObject.graph = JsonUtility.FromJson(textGraph, graphType) as IGraph;
-				}
+                    graphObject.graph.OnEnable();
+                }
 
 				selectedGuid = assetGuid;
-				if (graphObject.graph == null) graphObject.graph = Activator.CreateInstance(graphType) as IGraph;
-				graphObject.graph.OnEnable();
-				graphObject.graph.ValidateGraph();
+
+                graphObject.graph.ValidateGraph();
 				graphEditorView = new GraphEditorView(this, m_GraphObject.graph as AbstractNodeGraph)
 				{
-					persistenceKey = selectedGuid,
+					viewDataKey = selectedGuid,
 					assetName = asset.name.Split('/').Last()
 				};
 				graphEditorView.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
@@ -219,7 +225,7 @@ namespace NodeEditor.Editor.Scripts
 					var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(AssetDatabase.GUIDToAssetPath(selectedGuid));
 					graphEditorView = new GraphEditorView(this, materialGraph)
 					{
-						persistenceKey = selectedGuid,
+						viewDataKey = selectedGuid,
 						assetName = asset.name.Split('/').Last()
 					};
 				}
