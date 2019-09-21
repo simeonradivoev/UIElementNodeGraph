@@ -8,12 +8,12 @@ namespace NodeEditor
 		public virtual Type GraphType => typeof(NodeGraph);
 		private bool m_IsEnabled;
 
-		IGraph m_Graph;
+		private IGraph m_Graph;
 
 		public IGraph graph
 		{
 			get => m_Graph;
-            set
+			set
 			{
 				if (m_Graph != null)
 				{
@@ -37,7 +37,7 @@ namespace NodeEditor
 #endif
 		}
 
-		private void OnNodeAdded(INode node)
+		protected void OnNodeAdded(INode node)
 		{
 			if (!m_IsEnabled && Application.isPlaying) return;
 			var onEnableNode = node as IOnAssetEnabled;
@@ -51,12 +51,22 @@ namespace NodeEditor
 
 		public virtual void SetDirty(bool dirty)
 		{
-			
+
+		}
+
+		protected virtual void OnObjectEnable()
+		{
+
+		}
+
+		protected virtual void OnObjectDisable()
+		{
+
 		}
 
 		public virtual bool isDirty => false;
 
-        void ValidateInternal()
+		private void ValidateInternal()
 		{
 			if (graph != null)
 			{
@@ -68,9 +78,12 @@ namespace NodeEditor
 			Validate();
 		}
 
-		void OnEnable()
+		private void OnEnable()
 		{
 			m_IsEnabled = true;
+
+			OnObjectEnable();
+
 			ValidateInternal();
 
 #if UNITY_EDITOR
@@ -79,8 +92,10 @@ namespace NodeEditor
 			UndoRedoPerformed();
 		}
 
-		void OnDisable()
+		private void OnDisable()
 		{
+			OnObjectDisable();
+
 #if UNITY_EDITOR
 			UnityEditor.Undo.undoRedoPerformed -= UndoRedoPerformed;
 #endif
@@ -90,7 +105,7 @@ namespace NodeEditor
 
 		protected virtual void UndoRedoPerformed()
 		{
-			
+
 		}
 	}
 }
