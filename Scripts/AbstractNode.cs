@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using NodeEditor.Util;
+using SimpleJSON;
 using UnityEngine;
 
 namespace NodeEditor
@@ -16,7 +18,9 @@ namespace NodeEditor
 		protected static List<IEdge> s_TempEdges = new List<IEdge>();
 		protected static List<PreviewProperty> s_TempPreviewProperties = new List<PreviewProperty>();
 
-		[NonSerialized] private Guid m_Guid;
+		[SerializeField] private short m_SerializedVersion;
+
+		[SerializeField] private Guid m_Guid;
 
 		[SerializeField] private string m_GuidSerialized;
 
@@ -24,7 +28,7 @@ namespace NodeEditor
 
 		[SerializeField] private DrawState m_DrawState;
 
-		[NonSerialized] private Dictionary<int, ISlot> m_Slots = new Dictionary<int, ISlot>();
+		[SerializeField] private Dictionary<int, ISlot> m_Slots = new Dictionary<int, ISlot>();
 
 		[SerializeField] List<SerializationHelper.JSONSerializedIndexedElement> m_SerializableSlots = new List<SerializationHelper.JSONSerializedIndexedElement>();
 
@@ -716,24 +720,32 @@ namespace NodeEditor
 
 		public virtual void OnBeforeSerialize()
 		{
-			m_GuidSerialized = m_Guid.ToString();
-			m_SerializableSlots = SerializationHelper.Serialize<ISlot>(m_Slots);
+			if (m_SerializedVersion <= 0)
+			{
+				m_GuidSerialized = m_Guid.ToString();
+				m_SerializableSlots = SerializationHelper.Serialize<ISlot>(m_Slots);
+			}
 		}
 
 		public virtual void OnAfterDeserialize()
 		{
-			if (!string.IsNullOrEmpty(m_GuidSerialized))
-				m_Guid = new Guid(m_GuidSerialized);
-			else
-				m_Guid = Guid.NewGuid();
+			if (m_SerializedVersion <= 0)
+			{
+				if (!string.IsNullOrEmpty(m_GuidSerialized))
+					m_Guid = new Guid(m_GuidSerialized);
+				else
+					m_Guid = Guid.NewGuid();
 
-			if(m_Slots == null) m_Slots = new Dictionary<int, ISlot>();
-			SerializationHelper.Deserialize(m_Slots,m_SerializableSlots, GraphUtil.GetLegacyTypeRemapping());
+				if (m_Slots == null) m_Slots = new Dictionary<int, ISlot>();
+				SerializationHelper.Deserialize(m_Slots, m_SerializableSlots, GraphUtil.GetLegacyTypeRemapping());
 
-			m_SerializableSlots = null;
-			foreach (var s in m_Slots.Values)
-				s.owner = this;
-			UpdateNodeAfterDeserialization();
+				m_SerializableSlots = null;
+				foreach (var s in m_Slots.Values)
+					s.owner = this;
+				UpdateNodeAfterDeserialization();
+
+				m_SerializedVersion = 1;
+			}
 		}
 
 		public virtual void UpdateNodeAfterDeserialization()

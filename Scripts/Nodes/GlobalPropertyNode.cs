@@ -1,5 +1,6 @@
 ﻿using System;
 using NodeEditor.Controls;
+using SimpleJSON;
 using UnityEngine;
 
 namespace NodeEditor.Nodes
@@ -36,6 +37,12 @@ namespace NodeEditor.Nodes
 		public override void OnAfterDeserialize()
 		{
 			base.OnAfterDeserialize();
+			m_PropertyReference = StringToGUID.Get(m_PropertyReferenceName);
+		}
+
+		public override void UpdateNodeAfterDeserialization()
+		{
+			base.UpdateNodeAfterDeserialization();
 			m_PropertyReference = StringToGUID.Get(m_PropertyReferenceName);
 		}
 	}

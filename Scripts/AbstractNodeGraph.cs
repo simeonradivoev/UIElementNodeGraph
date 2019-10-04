@@ -16,7 +16,7 @@ namespace NodeEditor
 		public event Action<INode> onNodeAdded;
 
 		#region Property data
-		[NonSerialized]
+		[SerializeField]
 		List<INodeProperty> m_Properties = new List<INodeProperty>();
 
 		[NonSerialized]
@@ -68,7 +68,7 @@ namespace NodeEditor
 		[NonSerialized]
 		Stack<Identifier> m_FreeNodeTempIds = new Stack<Identifier>();
 
-		[NonSerialized]
+		[SerializeField]
 		List<INode> m_Nodes = new List<INode>();
 
 		[NonSerialized]
@@ -106,7 +106,7 @@ namespace NodeEditor
 
 		#region Edge data
 
-		[NonSerialized]
+		[SerializeField]
 		List<IEdge> m_Edges = new List<IEdge>();
 
 		public ReadOnlyList<IEdge> GetEdges()
@@ -142,6 +142,8 @@ namespace NodeEditor
 		#endregion
 
 		private bool m_Initialized;
+
+		[SerializeField] private int m_SerializedVersion;
 
 		public string name { get; set; }
 
@@ -708,36 +710,50 @@ namespace NodeEditor
 
 		public void OnBeforeSerialize()
 		{
-			m_SerializableNodes = SerializationHelper.Serialize(GetNodes<INode>());
-			m_SerializableEdges = SerializationHelper.Serialize<IEdge>(m_Edges);
-			m_SerializedProperties = SerializationHelper.Serialize<INodeProperty>(m_Properties);
+			if (m_SerializedVersion <= 0)
+			{
+				m_SerializableNodes = SerializationHelper.Serialize(GetNodes<INode>());
+				m_SerializableEdges = SerializationHelper.Serialize<IEdge>(m_Edges);
+				m_SerializedProperties = SerializationHelper.Serialize<INodeProperty>(m_Properties);
+            }
 		}
 
 		public virtual void OnAfterDeserialize()
 		{
-			// have to deserialize 'globals' before nodes
-			m_Properties = SerializationHelper.Deserialize<INodeProperty>(m_SerializedProperties, GraphUtil.GetLegacyTypeRemapping());
-			foreach (var property in m_Properties)
+			if (m_SerializedVersion <= 0)
 			{
-				m_PropertyDictionary.Add(property.guid,property);
+				// have to deserialize 'globals' before nodes
+				m_Properties =
+					SerializationHelper.Deserialize<INodeProperty>(m_SerializedProperties,
+						GraphUtil.GetLegacyTypeRemapping());
+
+				m_Nodes = SerializationHelper.Deserialize<INode>(m_SerializableNodes,
+					GraphUtil.GetLegacyTypeRemapping());
+
+				m_SerializableNodes = null;
+
+				m_Edges = SerializationHelper.Deserialize<IEdge>(m_SerializableEdges,
+					GraphUtil.GetLegacyTypeRemapping());
+				m_SerializableEdges = null;
+
+				m_SerializedVersion = 1;
 			}
-			var nodes = SerializationHelper.Deserialize<INode>(m_SerializableNodes, GraphUtil.GetLegacyTypeRemapping());
-			m_Nodes = new List<INode>(nodes.Count);
-			m_NodeDictionary = new Dictionary<Guid, INode>(nodes.Count);
-			foreach (var node in nodes.OfType<AbstractNode>())
+
+			m_NodeDictionary = new Dictionary<Guid, INode>(m_Nodes.Count);
+			foreach (var node in m_Nodes.OfType<AbstractNode>())
 			{
 				node.SetOwner(this);
 				node.UpdateNodeAfterDeserialization();
 				node.tempId = new Identifier(m_Nodes.Count);
-				m_Nodes.Add(node);
 				m_NodeDictionary.Add(node.guid, node);
 			}
 
-			m_SerializableNodes = null;
+            foreach (var property in m_Properties)
+			{
+				m_PropertyDictionary.Add(property.guid, property);
+			}
 
-			m_Edges = SerializationHelper.Deserialize<IEdge>(m_SerializableEdges, GraphUtil.GetLegacyTypeRemapping());
-			m_SerializableEdges = null;
-			foreach (var edge in m_Edges)
+            foreach (var edge in m_Edges)
 				AddEdgeToNodeEdges(edge);
 
 			HashSet<SlotReference> slots = new HashSet<SlotReference>();

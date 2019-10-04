@@ -1,4 +1,5 @@
 using System;
+using SimpleJSON;
 using UnityEngine;
 
 namespace NodeEditor
@@ -8,23 +9,60 @@ namespace NodeEditor
 		[SerializeField,HideInInspector]
 		SerializationHelper.JSONSerializedElement m_SerializedGraph;
 
-		IGraph m_DeserializedGraph;
+		[SerializeField, HideInInspector]
+		private string m_SerializedGraphData;
+
+		[SerializeField, HideInInspector]
+		private int m_SerializationType;
+
+        IGraph m_DeserializedGraph;
 
 		public virtual void OnBeforeSerialize()
 		{
 			if (graph != null)
-				m_SerializedGraph = SerializationHelper.Serialize(graph);
+			{
+				if (m_SerializationType <= 0)
+				{
+					m_SerializedGraph = SerializationHelper.Serialize(graph);
+					m_SerializationType = 0;
+				}
+				else
+				{
+					m_SerializedGraphData = JSONExtensions.SerializeFromReflection(graph).ToString();
+					m_SerializationType = 1;
+
+				}
+			}
 		}
 
 		public virtual void OnAfterDeserialize()
 		{
 			try
 			{
-				var deserializedGraph = SerializationHelper.Deserialize<IGraph>(m_SerializedGraph, null);
-				if (graph == null)
-					graph = deserializedGraph;
+				if (m_SerializationType <= 0)
+				{
+					var deserializedGraph = SerializationHelper.Deserialize<IGraph>(m_SerializedGraph, null);
+					if (graph == null)
+						graph = deserializedGraph;
+					else
+						m_DeserializedGraph = deserializedGraph;
+
+					//upgrade serialization
+					m_SerializationType = 1;
+					m_SerializedGraph = new SerializationHelper.JSONSerializedElement();
+				}
 				else
-					m_DeserializedGraph = deserializedGraph;
+				{
+					var jsonData = JSONNode.Parse(m_SerializedGraphData);
+					var deserializedGraph = (IGraph)jsonData.FromReflection(jsonData["$type"]);
+
+                    if (graph == null)
+						graph = deserializedGraph;
+					else
+						m_DeserializedGraph = deserializedGraph;
+
+                    m_SerializationType = 1;
+				}
 			}
 			catch (Exception e)
 			{
