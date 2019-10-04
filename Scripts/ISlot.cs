@@ -2,6 +2,9 @@
 
 namespace NodeEditor
 {
+	/// <summary>
+    /// Base Interface for all slots.
+    /// </summary>
 	public interface ISlot : IEquatable<ISlot>
 	{
 		int id { get; }

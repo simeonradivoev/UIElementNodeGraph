@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace NodeEditor
 {
+	/// <summary>
+    /// Serialization wrapper for Type.
+    /// </summary>
 	[Serializable]
 	public class SerializedType : ISerializationCallbackReceiver, IEquatable<SerializedType>
 	{

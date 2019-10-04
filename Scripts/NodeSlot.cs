@@ -163,25 +163,33 @@ namespace NodeEditor
 			return m_Id == other.m_Id && owner.guid.Equals(other.owner.guid);
 		}
 
-		public bool Equals(ISlot other)
-		{
-			return Equals(other as object);
-		}
+		#region Implementation of IEquatable<ISlot>
 
-		public override bool Equals(object obj)
-		{
-			if (ReferenceEquals(null, obj)) return false;
-			if (ReferenceEquals(this, obj)) return true;
-			if (obj.GetType() != this.GetType()) return false;
-			return Equals((NodeSlot) obj);
-		}
+        public bool Equals(ISlot other)
+        {
+	        return Equals(other as object);
+        }
 
-		public override int GetHashCode()
-		{
-			unchecked
-			{
-				return (m_Id * 397) ^ (owner != null ? owner.GetHashCode() : 0);
-			}
-		}
+        #endregion
+
+        #region Overrides of Object
+
+        public override bool Equals(object obj)
+        {
+	        if (ReferenceEquals(null, obj)) return false;
+	        if (ReferenceEquals(this, obj)) return true;
+	        if (obj.GetType() != this.GetType()) return false;
+	        return Equals((NodeSlot)obj);
+        }
+
+        public override int GetHashCode()
+        {
+	        unchecked
+	        {
+		        return (m_Id * 397) ^ (owner != null ? owner.GetHashCode() : 0);
+	        }
+        }
+
+        #endregion
 	}
 }

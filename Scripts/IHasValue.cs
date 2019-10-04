@@ -2,12 +2,18 @@
 
 namespace NodeEditor
 {
+	/// <summary>
+    /// Interface for Nodes that contain a value.
+    /// </summary>
 	public interface IHasValue
 	{
 		object value { get; }
 	}
 
-	public interface IHasValue<out T>
+	/// <summary>
+	/// Interface for Nodes that contain a value.
+	/// </summary>
+    public interface IHasValue<out T>
 	{
 		T value { get; }
 	}

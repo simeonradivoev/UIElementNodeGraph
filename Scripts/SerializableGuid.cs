@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace NodeEditor
 {
+	/// <summary>
+    /// A serialization wrapper for system GUID.
+    /// </summary>
 	[Serializable]
 	public class SerializableGuid : ISerializationCallbackReceiver
 	{

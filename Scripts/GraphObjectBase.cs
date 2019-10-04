@@ -10,34 +10,38 @@ namespace NodeEditor
 
 		private IGraph m_Graph;
 
-		public IGraph graph
-		{
-			get => m_Graph;
-			set
-			{
-				if (m_Graph != null)
-				{
-					m_Graph.owner = null;
-					m_Graph.onNodeAdded += OnNodeAdded;
-				}
+        #region Implementation of IGraphObject
 
-				m_Graph = value;
-				if (m_Graph != null)
-				{
-					m_Graph.owner = this;
-					m_Graph.onNodeAdded -= OnNodeAdded;
-				}
-			}
-		}
+        public IGraph graph
+        {
+	        get => m_Graph;
+	        set
+	        {
+		        if (m_Graph != null)
+		        {
+			        m_Graph.owner = null;
+			        m_Graph.onNodeAdded += OnNodeAdded;
+		        }
 
-		public void RegisterCompleteObjectUndo(string name)
-		{
+		        m_Graph = value;
+		        if (m_Graph != null)
+		        {
+			        m_Graph.owner = this;
+			        m_Graph.onNodeAdded -= OnNodeAdded;
+		        }
+	        }
+        }
+
+        public void RegisterCompleteObjectUndo(string name)
+        {
 #if UNITY_EDITOR
-			UnityEditor.Undo.RegisterCompleteObjectUndo(this, name);
+	        UnityEditor.Undo.RegisterCompleteObjectUndo(this, name);
 #endif
-		}
+        }
 
-		protected void OnNodeAdded(INode node)
+        #endregion
+
+        protected void OnNodeAdded(INode node)
 		{
 			if (!m_IsEnabled && Application.isPlaying) return;
 			var onEnableNode = node as IOnAssetEnabled;

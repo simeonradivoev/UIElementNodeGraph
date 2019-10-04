@@ -1,9 +1,19 @@
+using System;
+using UnityEngine;
+
 namespace NodeEditor
 {
+	/// <summary>
+    /// A helper struct that represents any identifier with a version and an index.
+    /// </summary>
+	[Serializable]
 	public struct Identifier
 	{
+		[SerializeField]
 		uint m_Version;
-		int m_Index;
+
+		[SerializeField]
+        int m_Index;
 
 		public Identifier(int index, uint version = 1)
 		{

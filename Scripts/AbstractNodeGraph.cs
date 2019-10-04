@@ -9,8 +9,6 @@ namespace NodeEditor
 {
 	public abstract class AbstractNodeGraph : IGraph, ISerializationCallbackReceiver, IDisposable
 	{
-		public IGraphObject owner { get; set; }
-
 		public object context { get; set; }
 
 		public event Action<INode> onNodeAdded;
@@ -19,129 +17,107 @@ namespace NodeEditor
 		[NonSerialized]
 		List<INodeProperty> m_Properties = new List<INodeProperty>();
 
-		[NonSerialized]
-		Dictionary<Guid,INodeProperty> m_PropertyDictionary = new Dictionary<Guid, INodeProperty>();
-
-		public ReadOnlyList<INodeProperty> GetProperties()
-		{
-			return new ReadOnlyList<INodeProperty>(m_Properties);
-		}
-
-		public INodeProperty GetProperty(Guid id)
-		{
-            if (m_PropertyDictionary.TryGetValue(id, out var prop))
-			{
-				return prop;
-			}
-			return null;
-		}
-
-		public IEnumerable<INodeProperty> properties => m_Properties;
-
-		[SerializeField]
-		List<SerializationHelper.JSONSerializedElement> m_SerializedProperties = new List<SerializationHelper.JSONSerializedElement>();
-
-		[NonSerialized]
-		List<INodeProperty> m_AddedProperties = new List<INodeProperty>();
-
-		public IEnumerable<INodeProperty> addedProperties => m_AddedProperties;
-
-		[NonSerialized]
-		List<Guid> m_RemovedProperties = new List<Guid>();
-
-		public IEnumerable<Guid> removedProperties => m_RemovedProperties;
-
-		[NonSerialized]
-		List<INodeProperty> m_MovedProperties = new List<INodeProperty>();
-
-		public IEnumerable<INodeProperty> movedProperties => m_MovedProperties;
-
 		[SerializeField]
 		SerializableGuid m_GUID = new SerializableGuid();
 
-		public Guid guid => m_GUID.guid;
+		public IEnumerable<INodeProperty> properties => m_Properties;
 
-		#endregion
+        public Guid guid => m_GUID.guid;
 
-		#region Node data
+        #endregion
 
-		[NonSerialized]
-		Stack<Identifier> m_FreeNodeTempIds = new Stack<Identifier>();
+        #region Property Caches
 
-		[NonSerialized]
+        [NonSerialized]
+        List<INodeProperty> m_AddedProperties = new List<INodeProperty>();
+
+        [NonSerialized]
+        List<Guid> m_RemovedProperties = new List<Guid>();
+
+        [NonSerialized]
+        List<INodeProperty> m_MovedProperties = new List<INodeProperty>();
+
+        [NonSerialized]
+        Dictionary<Guid, INodeProperty> m_PropertyDictionary = new Dictionary<Guid, INodeProperty>();
+
+        public IEnumerable<INodeProperty> addedProperties => m_AddedProperties;
+
+        public IEnumerable<Guid> removedProperties => m_RemovedProperties;
+
+        public IEnumerable<INodeProperty> movedProperties => m_MovedProperties;
+
+        #endregion
+
+        #region Property Serialization Fields
+
+        [SerializeField]
+        List<SerializationHelper.JSONSerializedElement> m_SerializedProperties = new List<SerializationHelper.JSONSerializedElement>();
+
+        #endregion
+
+        #region Node data
+
+        [NonSerialized]
 		List<INode> m_Nodes = new List<INode>();
 
-		[NonSerialized]
-		Dictionary<Guid, INode> m_NodeDictionary = new Dictionary<Guid, INode>();
+        #endregion
 
-		public IEnumerable<T> GetNodes<T>() where T : INode
-		{
-			return m_Nodes.Where(x => x != null).OfType<T>();
-		}
+        #region Node Caches
 
-		public ReadOnlyList<INode> GetNodes()
-		{
-			return new ReadOnlyList<INode>(m_Nodes);
-		}
+        [NonSerialized]
+        Stack<Identifier> m_FreeNodeTempIds = new Stack<Identifier>();
 
-		[SerializeField]
-		List<SerializationHelper.JSONSerializedElement> m_SerializableNodes = new List<SerializationHelper.JSONSerializedElement>();
+        [NonSerialized]
+        List<INode> m_AddedNodes = new List<INode>();
 
-		[NonSerialized]
-		List<INode> m_AddedNodes = new List<INode>();
+        [NonSerialized]
+        List<INode> m_RemovedNodes = new List<INode>();
 
-		public IEnumerable<INode> addedNodes => m_AddedNodes;
+        [NonSerialized]
+        List<INode> m_PastedNodes = new List<INode>();
 
-		[NonSerialized]
-		List<INode> m_RemovedNodes = new List<INode>();
+        [NonSerialized]
+        Dictionary<Guid, INode> m_NodeDictionary = new Dictionary<Guid, INode>();
 
-		public IEnumerable<INode> removedNodes => m_RemovedNodes;
+        public IEnumerable<INode> pastedNodes => m_PastedNodes;
 
-		[NonSerialized]
-		List<INode> m_PastedNodes = new List<INode>();
+        #endregion
 
-		public IEnumerable<INode> pastedNodes => m_PastedNodes;
+        #region Node Serialization Fileds
 
-		#endregion
+        [SerializeField]
+        List<SerializationHelper.JSONSerializedElement> m_SerializableNodes = new List<SerializationHelper.JSONSerializedElement>();
 
-		#region Edge data
+        #endregion
 
-		[NonSerialized]
+        #region Edge data
+
+        [NonSerialized]
 		List<IEdge> m_Edges = new List<IEdge>();
 
-		public ReadOnlyList<IEdge> GetEdges()
-		{
-			return new ReadOnlyList<IEdge>(m_Edges);
-		}
+        #endregion
 
-		public ReadOnlyList<IEdge> GetEdges(Guid nodeId)
-		{
-            if (m_NodeEdges.TryGetValue(nodeId, out var edges))
-			{
-				return new ReadOnlyList<IEdge>(edges);
-			}
-			return new ReadOnlyList<IEdge>();
-		}
+        #region Edge Caches
 
-		[SerializeField]
-		List<SerializationHelper.JSONSerializedElement> m_SerializableEdges = new List<SerializationHelper.JSONSerializedElement>();
+        [NonSerialized]
+        Dictionary<Guid, List<IEdge>> m_NodeEdges = new Dictionary<Guid, List<IEdge>>();
 
-		[NonSerialized]
-		Dictionary<Guid, List<IEdge>> m_NodeEdges = new Dictionary<Guid, List<IEdge>>();
+        [NonSerialized]
+        List<IEdge> m_AddedEdges = new List<IEdge>();
 
-		[NonSerialized]
-		List<IEdge> m_AddedEdges = new List<IEdge>();
+        [NonSerialized]
+        List<IEdge> m_RemovedEdges = new List<IEdge>();
 
-		public IEnumerable<IEdge> addedEdges => m_AddedEdges;
+        #endregion
 
-		[NonSerialized]
-		List<IEdge> m_RemovedEdges = new List<IEdge>();
+        #region Edge Serialization Fields
 
-		public IEnumerable<IEdge> removedEdges => m_RemovedEdges;
+        [SerializeField]
+        List<SerializationHelper.JSONSerializedElement> m_SerializableEdges = new List<SerializationHelper.JSONSerializedElement>();
 
-		#endregion
+        #endregion
 
-		private bool m_Initialized;
+        private bool m_Initialized;
 
 		public string name { get; set; }
 
@@ -160,32 +136,269 @@ namespace NodeEditor
 			}
 		}
 
-		public void ClearChanges()
-		{
-			m_AddedNodes.Clear();
-			m_RemovedNodes.Clear();
-			m_PastedNodes.Clear();
-			m_AddedEdges.Clear();
-			m_RemovedEdges.Clear();
-			m_AddedProperties.Clear();
-			m_RemovedProperties.Clear();
-			m_MovedProperties.Clear();
-		}
+        #region Implementation of IGraph
 
-		public virtual void AddNode(INode node)
-		{
-			if (node is AbstractNode)
-			{
-				AddNodeNoValidate(node);
-				ValidateGraph();
-			}
-			else
-			{
-				Debug.LogWarningFormat("Trying to add node {0} to Material graph, but it is not a {1}", node, typeof(AbstractNode));
-			}
-		}
+        /// <inheritdoc/>
+        public IEnumerable<INode> addedNodes => m_AddedNodes;
 
-		void AddNodeNoValidate(INode node)
+        /// <inheritdoc/>
+        public IEnumerable<INode> removedNodes => m_RemovedNodes;
+
+        /// <inheritdoc/>
+        public IEnumerable<IEdge> removedEdges => m_RemovedEdges;
+
+        /// <inheritdoc/>
+        public IEnumerable<IEdge> addedEdges => m_AddedEdges;
+
+        /// <inheritdoc/>
+        public IGraphObject owner { get; set; }
+
+        /// <inheritdoc/>
+        public ReadOnlyList<INode> GetNodes()
+        {
+	        return new ReadOnlyList<INode>(m_Nodes);
+        }
+
+        /// <inheritdoc/>
+        public ReadOnlyList<INodeProperty> GetProperties()
+        {
+	        return new ReadOnlyList<INodeProperty>(m_Properties);
+        }
+
+        /// <inheritdoc/>
+        public ReadOnlyList<IEdge> GetEdges()
+        {
+	        return new ReadOnlyList<IEdge>(m_Edges);
+        }
+
+        /// <inheritdoc/>
+        public ReadOnlyList<IEdge> GetEdges(Guid nodeId)
+        {
+	        if (m_NodeEdges.TryGetValue(nodeId, out var edges))
+	        {
+		        return new ReadOnlyList<IEdge>(edges);
+	        }
+	        return new ReadOnlyList<IEdge>();
+        }
+
+        /// <inheritdoc/>
+        public INodeProperty GetProperty(Guid id)
+        {
+	        if (m_PropertyDictionary.TryGetValue(id, out var prop))
+	        {
+		        return prop;
+	        }
+	        return null;
+        }
+
+        /// <inheritdoc/>
+        public virtual void AddNode(INode node)
+        {
+	        if (node is AbstractNode)
+	        {
+		        AddNodeNoValidate(node);
+		        ValidateGraph();
+	        }
+	        else
+	        {
+		        Debug.LogWarningFormat("Trying to add node {0} to Material graph, but it is not a {1}", node, typeof(AbstractNode));
+	        }
+        }
+
+        /// <inheritdoc/>
+        public void RemoveNode(INode node)
+        {
+	        if (!node.canDeleteNode)
+		        return;
+	        RemoveNodeNoValidate(node);
+	        ValidateGraph();
+        }
+
+        /// <inheritdoc/>
+        public virtual IEdge Connect(SlotReference fromSlotRef, SlotReference toSlotRef)
+        {
+	        var newEdge = ConnectNoValidate(fromSlotRef, toSlotRef);
+	        ValidateGraph();
+	        return newEdge;
+        }
+
+        /// <inheritdoc/>
+        public virtual void RemoveEdge(IEdge e)
+        {
+	        RemoveEdgeNoValidate(e);
+	        ValidateGraph();
+        }
+
+        /// <inheritdoc/>
+        public void RemoveElements(IEnumerable<INode> nodes, IEnumerable<IEdge> edges)
+        {
+	        foreach (var edge in edges.ToArray())
+		        RemoveEdgeNoValidate(edge);
+
+	        foreach (var serializableNode in nodes.ToArray())
+		        RemoveNodeNoValidate(serializableNode);
+
+	        ValidateGraph();
+        }
+
+        /// <inheritdoc/>
+        public INode GetNodeFromGuid(Guid guid)
+        {
+	        m_NodeDictionary.TryGetValue(guid, out var node);
+	        return node;
+        }
+
+        /// <inheritdoc/>
+        public bool ContainsNodeGuid(Guid guid)
+        {
+	        return m_NodeDictionary.ContainsKey(guid);
+        }
+
+        /// <inheritdoc/>
+        public T GetNodeFromGuid<T>(Guid guid) where T : INode
+        {
+	        var node = GetNodeFromGuid(guid);
+	        if (node is T)
+		        return (T)node;
+	        return default;
+        }
+
+        /// <inheritdoc/>
+        public void ValidateGraph()
+        {
+	        var propertyNodes = GetNodes<PropertyNode>().Where(n => !m_Properties.Any(p => p.guid == n.propertyGuid)).ToArray();
+	        foreach (var pNode in propertyNodes)
+		        ReplacePropertyNodeWithConcreteNodeNoValidate(pNode);
+
+	        //First validate edges, remove any
+	        //orphans. This can happen if a user
+	        //manually modifies serialized data
+	        //of if they delete a node in the inspector
+	        //debug view.
+	        foreach (var edge in m_Edges.ToArray())
+	        {
+		        var outputNode = GetNodeFromGuid(edge.outputSlot.nodeGuid);
+		        var inputNode = GetNodeFromGuid(edge.inputSlot.nodeGuid);
+
+		        NodeSlot outputSlot = null;
+		        NodeSlot inputSlot = null;
+		        if (outputNode != null && inputNode != null)
+		        {
+			        outputSlot = outputNode.FindOutputSlot<NodeSlot>(edge.outputSlot.slotId);
+			        inputSlot = inputNode.FindInputSlot<NodeSlot>(edge.inputSlot.slotId);
+		        }
+
+		        if (outputNode == null
+		            || inputNode == null
+		            || outputSlot == null
+		            || inputSlot == null
+		            || !outputSlot.IsCompatibleWith(inputSlot))
+		        {
+			        //orphaned edge
+			        RemoveEdgeNoValidate(edge);
+		        }
+	        }
+
+	        foreach (var node in GetNodes<INode>())
+		        node.ValidateNode();
+
+	        foreach (var edge in m_AddedEdges.ToList())
+	        {
+		        if (!ContainsNodeGuid(edge.outputSlot.nodeGuid) || !ContainsNodeGuid(edge.inputSlot.nodeGuid))
+		        {
+			        Debug.LogWarningFormat("Added edge is invalid: {0} -> {1}\n{2}", edge.outputSlot.nodeGuid, edge.inputSlot.nodeGuid, Environment.StackTrace);
+			        m_AddedEdges.Remove(edge);
+		        }
+	        }
+
+	        var dirtySlots = new HashSet<SlotReference>();
+
+	        foreach (var edge in m_RemovedEdges)
+	        {
+		        dirtySlots.Add(edge.inputSlot);
+		        dirtySlots.Add(edge.outputSlot);
+	        }
+
+	        foreach (var edge in m_AddedEdges)
+	        {
+		        dirtySlots.Add(edge.inputSlot);
+		        dirtySlots.Add(edge.outputSlot);
+	        }
+
+	        foreach (var slot in dirtySlots)
+	        {
+		        RebuildEdgeCache(slot);
+	        }
+        }
+
+        /// <inheritdoc/>
+        public void ReplaceWith(IGraph other)
+        {
+	        if (!(other is AbstractNodeGraph otherMg))
+		        throw new ArgumentException("Can only replace with another AbstractNodeGraph", "other");
+
+	        using (var removedPropertiesPooledObject = ListPool<Guid>.GetDisposable())
+	        {
+		        var removedPropertyGuids = removedPropertiesPooledObject.value;
+		        foreach (var property in m_Properties)
+			        removedPropertyGuids.Add(property.guid);
+		        foreach (var propertyGuid in removedPropertyGuids)
+			        RemoveShaderPropertyNoValidate(propertyGuid);
+	        }
+	        foreach (var otherProperty in otherMg.properties)
+	        {
+		        if (!properties.Any(p => p.guid == otherProperty.guid))
+			        AddShaderProperty(otherProperty);
+	        }
+
+	        other.ValidateGraph();
+	        ValidateGraph();
+
+	        // Current tactic is to remove all nodes and edges and then re-add them, such that depending systems
+	        // will re-initialize with new references.
+	        using (var pooledList = ListPool<IEdge>.GetDisposable())
+	        {
+		        var removedNodeEdges = pooledList.value;
+		        removedNodeEdges.AddRange(m_Edges);
+		        foreach (var edge in removedNodeEdges)
+			        RemoveEdgeNoValidate(edge);
+	        }
+
+	        using (var removedNodesPooledObject = ListPool<Guid>.GetDisposable())
+	        {
+		        var removedNodeGuids = removedNodesPooledObject.value;
+		        removedNodeGuids.AddRange(m_Nodes.Where(n => n != null).Select(n => n.guid));
+		        foreach (var nodeGuid in removedNodeGuids)
+			        RemoveNodeNoValidate(m_NodeDictionary[nodeGuid]);
+	        }
+
+	        ValidateGraph();
+
+	        foreach (var node in other.GetNodes())
+		        AddNodeNoValidate(node);
+
+	        foreach (var edge in other.GetEdges())
+		        ConnectNoValidate(edge.outputSlot, edge.inputSlot);
+
+	        ValidateGraph();
+        }
+
+        /// <inheritdoc/>
+        public void ClearChanges()
+        {
+	        m_AddedNodes.Clear();
+	        m_RemovedNodes.Clear();
+	        m_PastedNodes.Clear();
+	        m_AddedEdges.Clear();
+	        m_RemovedEdges.Clear();
+	        m_AddedProperties.Clear();
+	        m_RemovedProperties.Clear();
+	        m_MovedProperties.Clear();
+        }
+
+        #endregion
+
+        void AddNodeNoValidate(INode node)
 		{
 			node.SetOwner(this);
 			if (m_FreeNodeTempIds.Any())
@@ -208,15 +421,7 @@ namespace NodeEditor
 			onNodeAdded?.Invoke(node);
 		}
 
-		public void RemoveNode(INode node)
-		{
-			if (!node.canDeleteNode)
-				return;
-			RemoveNodeNoValidate(node);
-			ValidateGraph();
-		}
-
-		void RemoveNodeNoValidate(INode node)
+        void RemoveNodeNoValidate(INode node)
 		{
 			var abstractNode = (AbstractNode)node;
 			if (!abstractNode.canDeleteNode)
@@ -286,30 +491,6 @@ namespace NodeEditor
 			return newEdge;
 		}
 
-		public virtual IEdge Connect(SlotReference fromSlotRef, SlotReference toSlotRef)
-		{
-			var newEdge = ConnectNoValidate(fromSlotRef, toSlotRef);
-			ValidateGraph();
-			return newEdge;
-		}
-
-		public virtual void RemoveEdge(IEdge e)
-		{
-			RemoveEdgeNoValidate(e);
-			ValidateGraph();
-		}
-
-		public void RemoveElements(IEnumerable<INode> nodes, IEnumerable<IEdge> edges)
-		{
-			foreach (var edge in edges.ToArray())
-				RemoveEdgeNoValidate(edge);
-
-			foreach (var serializableNode in nodes.ToArray())
-				RemoveNodeNoValidate(serializableNode);
-
-			ValidateGraph();
-		}
-
 		protected void RemoveEdgeNoValidate(IEdge e)
 		{
 			e = m_Edges.FirstOrDefault(x => x.Equals(e));
@@ -326,12 +507,6 @@ namespace NodeEditor
 			m_RemovedEdges.Add(e);
 		}
 
-		public INode GetNodeFromGuid(Guid guid)
-		{
-            m_NodeDictionary.TryGetValue(guid, out var node);
-			return node;
-		}
-
 		public INode GetNodeFromTempId(Identifier tempId)
 		{
 			if (tempId.index > m_Nodes.Count)
@@ -342,19 +517,6 @@ namespace NodeEditor
 			if (node.tempId.version != tempId.version)
 				throw new Exception("Trying to retrieve a node that was removed from the graph.");
 			return node;
-		}
-
-		public bool ContainsNodeGuid(Guid guid)
-		{
-			return m_NodeDictionary.ContainsKey(guid);
-		}
-
-		public T GetNodeFromGuid<T>(Guid guid) where T : INode
-		{
-			var node = GetNodeFromGuid(guid);
-			if (node is T)
-				return (T)node;
-			return default;
 		}
 
 		public void AddShaderProperty(INodeProperty property)
@@ -525,124 +687,6 @@ namespace NodeEditor
 			}
 		}
 
-		public void ValidateGraph()
-		{
-			var propertyNodes = GetNodes<PropertyNode>().Where(n => !m_Properties.Any(p => p.guid == n.propertyGuid)).ToArray();
-			foreach (var pNode in propertyNodes)
-				ReplacePropertyNodeWithConcreteNodeNoValidate(pNode);
-
-			//First validate edges, remove any
-			//orphans. This can happen if a user
-			//manually modifies serialized data
-			//of if they delete a node in the inspector
-			//debug view.
-			foreach (var edge in m_Edges.ToArray())
-			{
-				var outputNode = GetNodeFromGuid(edge.outputSlot.nodeGuid);
-				var inputNode = GetNodeFromGuid(edge.inputSlot.nodeGuid);
-
-				NodeSlot outputSlot = null;
-				NodeSlot inputSlot = null;
-				if (outputNode != null && inputNode != null)
-				{
-					outputSlot = outputNode.FindOutputSlot<NodeSlot>(edge.outputSlot.slotId);
-					inputSlot = inputNode.FindInputSlot<NodeSlot>(edge.inputSlot.slotId);
-				}
-
-				if (outputNode == null
-				    || inputNode == null
-				    || outputSlot == null
-				    || inputSlot == null
-				    || !outputSlot.IsCompatibleWith(inputSlot))
-				{
-					//orphaned edge
-					RemoveEdgeNoValidate(edge);
-				}
-			}
-
-			foreach (var node in GetNodes<INode>())
-				node.ValidateNode();
-
-			foreach (var edge in m_AddedEdges.ToList())
-			{
-				if (!ContainsNodeGuid(edge.outputSlot.nodeGuid) || !ContainsNodeGuid(edge.inputSlot.nodeGuid))
-				{
-					Debug.LogWarningFormat("Added edge is invalid: {0} -> {1}\n{2}", edge.outputSlot.nodeGuid, edge.inputSlot.nodeGuid, Environment.StackTrace);
-					m_AddedEdges.Remove(edge);
-				}
-			}
-
-			var dirtySlots = new HashSet<SlotReference>();
-
-			foreach (var edge in m_RemovedEdges)
-			{
-				dirtySlots.Add(edge.inputSlot);
-				dirtySlots.Add(edge.outputSlot);
-			}
-
-			foreach (var edge in m_AddedEdges)
-			{
-				dirtySlots.Add(edge.inputSlot);
-				dirtySlots.Add(edge.outputSlot);
-			}
-
-			foreach (var slot in dirtySlots)
-			{
-				RebuildEdgeCache(slot);
-			}
-		}
-
-		public void ReplaceWith(IGraph other)
-		{
-            if (!(other is AbstractNodeGraph otherMg))
-				throw new ArgumentException("Can only replace with another AbstractNodeGraph", "other");
-
-			using (var removedPropertiesPooledObject = ListPool<Guid>.GetDisposable())
-			{
-				var removedPropertyGuids = removedPropertiesPooledObject.value;
-				foreach (var property in m_Properties)
-					removedPropertyGuids.Add(property.guid);
-				foreach (var propertyGuid in removedPropertyGuids)
-					RemoveShaderPropertyNoValidate(propertyGuid);
-			}
-			foreach (var otherProperty in otherMg.properties)
-			{
-				if (!properties.Any(p => p.guid == otherProperty.guid))
-					AddShaderProperty(otherProperty);
-			}
-
-			other.ValidateGraph();
-			ValidateGraph();
-
-			// Current tactic is to remove all nodes and edges and then re-add them, such that depending systems
-			// will re-initialize with new references.
-			using (var pooledList = ListPool<IEdge>.GetDisposable())
-			{
-				var removedNodeEdges = pooledList.value;
-				removedNodeEdges.AddRange(m_Edges);
-				foreach (var edge in removedNodeEdges)
-					RemoveEdgeNoValidate(edge);
-			}
-
-			using (var removedNodesPooledObject = ListPool<Guid>.GetDisposable())
-			{
-				var removedNodeGuids = removedNodesPooledObject.value;
-				removedNodeGuids.AddRange(m_Nodes.Where(n => n != null).Select(n => n.guid));
-				foreach (var nodeGuid in removedNodeGuids)
-					RemoveNodeNoValidate(m_NodeDictionary[nodeGuid]);
-			}
-
-			ValidateGraph();
-
-			foreach (var node in other.GetNodes())
-				AddNodeNoValidate(node);
-
-			foreach (var edge in other.GetEdges())
-				ConnectNoValidate(edge.outputSlot, edge.inputSlot);
-
-			ValidateGraph();
-		}
-
 		public void PasteGraph(CopyPasteGraph graphToPaste, List<INode> remappedNodes, List<IEdge> remappedEdges)
 		{
 			var nodeGuidMap = new Dictionary<Guid, Guid>();
@@ -706,51 +750,6 @@ namespace NodeEditor
 			ValidateGraph();
 		}
 
-		public void OnBeforeSerialize()
-		{
-			m_SerializableNodes = SerializationHelper.Serialize(GetNodes<INode>());
-			m_SerializableEdges = SerializationHelper.Serialize<IEdge>(m_Edges);
-			m_SerializedProperties = SerializationHelper.Serialize<INodeProperty>(m_Properties);
-		}
-
-		public virtual void OnAfterDeserialize()
-		{
-			// have to deserialize 'globals' before nodes
-			m_Properties = SerializationHelper.Deserialize<INodeProperty>(m_SerializedProperties, GraphUtil.GetLegacyTypeRemapping());
-			foreach (var property in m_Properties)
-			{
-				m_PropertyDictionary.Add(property.guid,property);
-			}
-			var nodes = SerializationHelper.Deserialize<INode>(m_SerializableNodes, GraphUtil.GetLegacyTypeRemapping());
-			m_Nodes = new List<INode>(nodes.Count);
-			m_NodeDictionary = new Dictionary<Guid, INode>(nodes.Count);
-			foreach (var node in nodes.OfType<AbstractNode>())
-			{
-				node.SetOwner(this);
-				node.UpdateNodeAfterDeserialization();
-				node.tempId = new Identifier(m_Nodes.Count);
-				m_Nodes.Add(node);
-				m_NodeDictionary.Add(node.guid, node);
-			}
-
-			m_SerializableNodes = null;
-
-			m_Edges = SerializationHelper.Deserialize<IEdge>(m_SerializableEdges, GraphUtil.GetLegacyTypeRemapping());
-			m_SerializableEdges = null;
-			foreach (var edge in m_Edges)
-				AddEdgeToNodeEdges(edge);
-
-			HashSet<SlotReference> slots = new HashSet<SlotReference>();
-			foreach (var edge in m_Edges)
-			{
-				slots.Add(edge.inputSlot);
-				slots.Add(edge.outputSlot);
-			}
-
-			foreach (var slot in slots)
-				RebuildEdgeCache(slot);
-		}
-
 		public void OnEnable()
 		{
 			foreach (var node in GetNodes<INode>().OfType<IOnAssetEnabled>())
@@ -766,5 +765,59 @@ namespace NodeEditor
 				disposable.Dispose();
 			}
 		}
-	}
+
+		public IEnumerable<T> GetNodes<T>() where T : INode
+		{
+			return m_Nodes.Where(x => x != null).OfType<T>();
+		}
+
+		#region Implementation of ISerializationCallbackReceiver
+
+        public void OnBeforeSerialize()
+        {
+	        m_SerializableNodes = SerializationHelper.Serialize(GetNodes<INode>());
+	        m_SerializableEdges = SerializationHelper.Serialize<IEdge>(m_Edges);
+	        m_SerializedProperties = SerializationHelper.Serialize<INodeProperty>(m_Properties);
+        }
+
+        public virtual void OnAfterDeserialize()
+        {
+	        // have to deserialize 'globals' before nodes
+	        m_Properties = SerializationHelper.Deserialize<INodeProperty>(m_SerializedProperties, GraphUtil.GetLegacyTypeRemapping());
+	        foreach (var property in m_Properties)
+	        {
+		        m_PropertyDictionary.Add(property.guid, property);
+	        }
+	        var nodes = SerializationHelper.Deserialize<INode>(m_SerializableNodes, GraphUtil.GetLegacyTypeRemapping());
+	        m_Nodes = new List<INode>(nodes.Count);
+	        m_NodeDictionary = new Dictionary<Guid, INode>(nodes.Count);
+	        foreach (var node in nodes.OfType<AbstractNode>())
+	        {
+		        node.SetOwner(this);
+		        node.UpdateNodeAfterDeserialization();
+		        node.tempId = new Identifier(m_Nodes.Count);
+		        m_Nodes.Add(node);
+		        m_NodeDictionary.Add(node.guid, node);
+	        }
+
+	        m_SerializableNodes = null;
+
+	        m_Edges = SerializationHelper.Deserialize<IEdge>(m_SerializableEdges, GraphUtil.GetLegacyTypeRemapping());
+	        m_SerializableEdges = null;
+	        foreach (var edge in m_Edges)
+		        AddEdgeToNodeEdges(edge);
+
+	        HashSet<SlotReference> slots = new HashSet<SlotReference>();
+	        foreach (var edge in m_Edges)
+	        {
+		        slots.Add(edge.inputSlot);
+		        slots.Add(edge.outputSlot);
+	        }
+
+	        foreach (var slot in slots)
+		        RebuildEdgeCache(slot);
+        }
+
+        #endregion
+    }
 }
